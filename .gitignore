@@ -17,6 +17,12 @@ dist
 .auth-qa-profile
 .login-error-qa-profile
 .tmp-*
+.chrome-cdp/
+current-discover.png
+discover-*.png
+fixture-discover*.png
+tago_split_assets/
+tago_split_assets.zip
 .h5-*.log
 .h5*.log
 .h5*.err.log
