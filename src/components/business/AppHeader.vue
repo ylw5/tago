@@ -136,4 +136,8 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
   .header--home .header__slogan { display:none; }
   .header--home .header__cat-art { right:-54rpx; width:382rpx; height:191rpx; }
 }
+
+@media (min-width:361px) and (max-width:430px) {
+  .header--home { min-height:204rpx; }
+}
 </style>

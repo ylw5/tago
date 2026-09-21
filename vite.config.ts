@@ -22,13 +22,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
-      uni(),
       ...(browserProxyEnabled && upstreamOrigin ? [
         apiBrowserProxyPlugin({
           cdpUrl: env.VITE_API_CDP_URL || 'http://127.0.0.1:9223',
           upstreamOrigin,
         }),
       ] : []),
+      uni(),
     ],
     // 本机代理会断开 Node TLS；开发模式经 Chrome 网络栈转发真实 API。
     // 生产构建直接访问 VITE_API_BASE_URL，不使用这段逻辑。
@@ -39,6 +39,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      watch: { ignored: ['**/.chrome-cdp/**', '**/.workbuddy/**'] },
       proxy,
     },
     preview: {

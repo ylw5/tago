@@ -1,0 +1,223 @@
+{
+  "logo_title_elements": {
+    "file": "logo_title_elements.webp",
+    "box": [
+      0,
+      45,
+      315,
+      330
+    ],
+    "size": [
+      315,
+      285
+    ]
+  },
+  "avatars_sprite": {
+    "file": "avatars_sprite.webp",
+    "box": [
+      315,
+      45,
+      790,
+      335
+    ],
+    "size": [
+      475,
+      290
+    ]
+  },
+  "cats_decor_sprite": {
+    "file": "cats_decor_sprite.webp",
+    "box": [
+      790,
+      45,
+      1160,
+      335
+    ],
+    "size": [
+      370,
+      290
+    ]
+  },
+  "background_01": {
+    "file": "background_01.webp",
+    "box": [
+      1165,
+      45,
+      1532,
+      275
+    ],
+    "size": [
+      367,
+      230
+    ]
+  },
+  "background_02": {
+    "file": "background_02.webp",
+    "box": [
+      1165,
+      280,
+      1532,
+      495
+    ],
+    "size": [
+      367,
+      215
+    ]
+  },
+  "background_03": {
+    "file": "background_03.webp",
+    "box": [
+      1165,
+      500,
+      1532,
+      735
+    ],
+    "size": [
+      367,
+      235
+    ]
+  },
+  "background_04": {
+    "file": "background_04.webp",
+    "box": [
+      1165,
+      740,
+      1532,
+      965
+    ],
+    "size": [
+      367,
+      225
+    ]
+  },
+  "icons_sprite": {
+    "file": "icons_sprite.webp",
+    "box": [
+      0,
+      380,
+      425,
+      600
+    ],
+    "size": [
+      425,
+      220
+    ]
+  },
+  "coins_sprite": {
+    "file": "coins_sprite.webp",
+    "box": [
+      425,
+      380,
+      670,
+      595
+    ],
+    "size": [
+      245,
+      215
+    ]
+  },
+  "tag_cards_sprite": {
+    "file": "tag_cards_sprite.webp",
+    "box": [
+      670,
+      380,
+      960,
+      550
+    ],
+    "size": [
+      290,
+      170
+    ]
+  },
+  "buttons_sprite": {
+    "file": "buttons_sprite.webp",
+    "box": [
+      0,
+      625,
+      535,
+      785
+    ],
+    "size": [
+      535,
+      160
+    ]
+  },
+  "popup_decor_sprite": {
+    "file": "popup_decor_sprite.webp",
+    "box": [
+      535,
+      550,
+      745,
+      785
+    ],
+    "size": [
+      210,
+      235
+    ]
+  },
+  "notifications_sprite": {
+    "file": "notifications_sprite.webp",
+    "box": [
+      745,
+      550,
+      960,
+      785
+    ],
+    "size": [
+      215,
+      235
+    ]
+  },
+  "gender_pagination_sprite": {
+    "file": "gender_pagination_sprite.webp",
+    "box": [
+      960,
+      550,
+      1160,
+      785
+    ],
+    "size": [
+      200,
+      235
+    ]
+  },
+  "chat_bubbles_sprite": {
+    "file": "chat_bubbles_sprite.webp",
+    "box": [
+      0,
+      825,
+      390,
+      970
+    ],
+    "size": [
+      390,
+      145
+    ]
+  },
+  "misc_decor_sprite": {
+    "file": "misc_decor_sprite.webp",
+    "box": [
+      390,
+      825,
+      850,
+      970
+    ],
+    "size": [
+      460,
+      145
+    ]
+  },
+  "progress_bars_sprite": {
+    "file": "progress_bars_sprite.webp",
+    "box": [
+      850,
+      825,
+      1160,
+      970
+    ],
+    "size": [
+      310,
+      145
+    ]
+  }
+}
