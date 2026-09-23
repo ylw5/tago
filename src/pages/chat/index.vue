@@ -1,19 +1,28 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, nextTick, shallowRef } from 'vue'
+import { computed, nextTick, shallowRef, watch } from 'vue'
 import dayjs from 'dayjs'
 import AppHeader from '@/components/business/AppHeader.vue'
 import ChatComposer from '@/components/business/ChatComposer.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { useTinodeConversation } from '@/composables/useTinodeConversation'
-const conversationId=shallowRef(''),draft=shallowRef(''),messageAnchor=shallowRef('')
+const conversationId=shallowRef(''),draft=shallowRef(''),messageScrollTop=shallowRef(0),initialScrollReady=shallowRef(false)
 const {detail,messages,encounters,selectedEncounter,loading,connecting,sending,error,sendError,connected,load,send,openEncounter,closeEncounter}=useTinodeConversation()
 // 关系上下文：从相遇快照提取 Tag 名 + 按接受认识日计算「第 N 天」（PRD FR-6.1）
 const relationTag=computed(()=>{const summary=encounters.value[0]?.summary||detail.value?.latestEncounter?.summary;return summary?.match(/「(.+?)」/)?.[1]||null});
 const relationDays=computed(()=>{const accepted=encounters.value[0]?.acceptedAt||detail.value?.latestEncounter?.acceptedAt;if(!accepted)return null;const days=dayjs().diff(dayjs(accepted),'day');return Math.max(1,days+1)});
 const relationSubtitle=computed(()=>{if(!relationTag.value)return '因为一次真诚回答而相遇';return `因为 #${relationTag.value} 而认识${relationDays.value?` · 第 ${relationDays.value} 天`:''}`});
 const peerAvatar=computed(()=>{const seed=detail.value?.peerIdentity?.publicId||detail.value?.peerIdentity?.avatarId||'peer';const index=Array.from(seed).reduce((sum,char)=>sum+char.charCodeAt(0),0)%7;return `/static/avatars/u${index}.png`})
-async function sendMessage(){if(await send(draft.value)){draft.value='';await nextTick();messageAnchor.value=`message-${messages.value.at(-1)?.id||''}`}}
+watch([messages,loading],()=>{
+  if(loading.value){initialScrollReady.value=false;messageScrollTop.value=0;return}
+  if(!messages.value.length)return
+  uni.createSelectorQuery().select('.messages').scrollOffset(async node=>{
+    messageScrollTop.value=(Array.isArray(node)?node[0]:node)?.scrollHeight||0
+    await nextTick()
+    if(!loading.value)initialScrollReady.value=true
+  }).exec()
+},{flush:'post'})
+async function sendMessage(){if(await send(draft.value))draft.value=''}
 function giftHint(){uni.showToast({title:'礼物商店即将上线 ✨',icon:'none'})}
 async function showEncounter(id:string){await openEncounter(conversationId.value,id)}
 function goBack(){
@@ -25,7 +34,7 @@ function goBack(){
 }
 onLoad(q=>{conversationId.value=typeof q?.id==='string'?q.id:'';if(conversationId.value)load(conversationId.value)})
 </script>
-<template><view class="chat-page"><view class="chat-shell"><AppHeader back :title="detail?.peerIdentity?.displayName||'聊天'" :subtitle="relationSubtitle" compact @back="goBack"/><AsyncState :loading="loading" :error="error" :empty="!conversationId" empty-title="没有找到会话" @retry="load(conversationId)"><view v-if="!connected" class="connection" :class="{online:connected}"><i/>{{ connecting?'正在连接聊天服务':'聊天服务未连接' }}</view><scroll-view scroll-y class="messages" :scroll-into-view="messageAnchor"><button v-if="encounters.length" class="encounter-banner" @click="showEncounter(encounters[0].id)"><view class="encounter-banner__stamp">相遇<br>记</view><text>你们因为「{{ encounters[0].summary||'一次 Tag' }}」相遇</text><small>看看彼此当时写下的回答 →</small></button><view v-if="messages.length" class="bubble-list"><view v-for="message in messages" :id="`message-${message.id}`" :key="message.id" class="bubble-wrap" :class="{mine:message.mine}"><image class="bubble-avatar" :src="message.mine?'/static/avatars/u0.png':peerAvatar" mode="aspectFill"/><view class="bubble-body"><view class="bubble">{{ message.text }}</view><small>{{ message.time }}{{ message.mine?' · 已发送':'' }}</small></view></view></view><view v-else-if="connected" class="chat-empty"><b>连接成功</b><text>还没有消息，从一句真诚的问候开始吧。</text></view></scroll-view></AsyncState><ChatComposer v-model="draft" :connected="connected" :sending="sending" :error="sendError" @gift="giftHint" @send="sendMessage"/></view><view v-if="selectedEncounter" class="encounter-modal" @click="closeEncounter"><view class="encounter-sheet" @click.stop><text class="sheet-title">相遇时的回答</text><text class="sheet-tag"># {{ selectedEncounter.application.tag.body }}</text><article v-for="q in selectedEncounter.application.questions" :key="q.slot"><b>Q{{ q.slot }} {{ q.text }}</b><text>{{ selectedEncounter.application.publisherAnswers.find(a=>a.slot===q.slot)?.text||'—' }}</text><text>{{ selectedEncounter.application.applicantAnswers.find(a=>a.slot===q.slot)?.text||'—' }}</text></article><button @click="closeEncounter">收起</button></view></view></view></template>
+<template><view class="chat-page"><view class="chat-shell"><AppHeader back :title="detail?.peerIdentity?.displayName||'聊天'" :subtitle="relationSubtitle" compact @back="goBack"/><AsyncState :loading="loading || (!error && messages.length>0 && !initialScrollReady)" :error="error" :empty="!conversationId" empty-title="没有找到会话" @retry="load(conversationId)"><view v-if="!connected" class="connection" :class="{online:connected}"><i/>{{ connecting?'正在连接聊天服务':'聊天服务未连接' }}</view><scroll-view scroll-y class="messages" :scroll-top="messageScrollTop"><button v-if="encounters.length" class="encounter-banner" @click="showEncounter(encounters[0].id)"><view class="encounter-banner__stamp">相遇<br>记</view><text>你们因为「{{ encounters[0].summary||'一次 Tag' }}」相遇</text><small>看看彼此当时写下的回答 →</small></button><view v-if="messages.length" class="bubble-list"><view v-for="message in messages" :key="message.id" class="bubble-wrap" :class="{mine:message.mine}"><image class="bubble-avatar" :src="message.mine?'/static/avatars/u0.png':peerAvatar" mode="aspectFill"/><view class="bubble-body"><view class="bubble">{{ message.text }}</view><small>{{ message.time }}{{ message.mine?' · 已发送':'' }}</small></view></view></view><view v-else-if="connected" class="chat-empty"><b>连接成功</b><text>还没有消息，从一句真诚的问候开始吧。</text></view></scroll-view></AsyncState><ChatComposer v-model="draft" :connected="connected" :sending="sending" :error="sendError" @gift="giftHint" @send="sendMessage"/></view><view v-if="selectedEncounter" class="encounter-modal" @click="closeEncounter"><view class="encounter-sheet" @click.stop><text class="sheet-title">相遇时的回答</text><text class="sheet-tag"># {{ selectedEncounter.application.tag.body }}</text><article v-for="q in selectedEncounter.application.questions" :key="q.slot"><b>Q{{ q.slot }} {{ q.text }}</b><text>{{ selectedEncounter.application.publisherAnswers.find(a=>a.slot===q.slot)?.text||'—' }}</text><text>{{ selectedEncounter.application.applicantAnswers.find(a=>a.slot===q.slot)?.text||'—' }}</text></article><button @click="closeEncounter">收起</button></view></view></view></template>
 <style scoped lang="scss">
 .chat-page { min-height:100dvh; background:linear-gradient(180deg,#eff1ea 0%,#e9ebe4 100%); }
 .chat-shell {
@@ -38,6 +47,7 @@ onLoad(q=>{conversationId.value=typeof q?.id==='string'?q.id:'';if(conversationI
   padding:0 28rpx;
   overflow:hidden;
 }
+.chat-shell :deep(.async-state__content) { display:flex; min-height:0; flex-direction:column; }
 
 .connection {
   display:flex;
