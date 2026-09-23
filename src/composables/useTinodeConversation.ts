@@ -3,7 +3,7 @@ import type { Tinode, TinodeMessage, TinodeTopic } from 'tinode-sdk'
 import * as TinodeModule from 'tinode-sdk'
 import { createChatConnection, createConversationConnection, getChatDetail, getEncounterDetail, listEncounters } from '@/api/chat'
 import type { ConversationDetailDto, EncounterDetailDto } from '@/api/chat'
-import { FIXTURES_ENABLED, getApiBaseUrl } from '@/api/client'
+import { FIXTURES_ENABLED } from '@/api/client'
 import { fixtureChatMessages, fixtureChatReply } from '@/mocks/fixtures'
 
 export interface LiveMessage { id:string; text:string; mine:boolean; time:string; sequence:number }
@@ -79,9 +79,9 @@ export function useTinodeConversation() {
       const conversation=await createConversationConnection(conversationId)
       // Tinode ticket is single-use: fetch the topic first, then issue the login ticket.
       const bootstrap=await createChatConnection()
-      const localProxy=import.meta.env.VITE_API_BROWSER_PROXY==='true'&&getApiBaseUrl().startsWith('/')
-      const endpoint=new URL(localProxy?`${window.location.origin}${getApiBaseUrl()}`:bootstrap.endpoint)
-      tinode=new createTinode({host:`${endpoint.host}${endpoint.pathname.replace(/\/$/,'')}`,secure:endpoint.protocol==='https:',apiKey:bootstrap.apiKey,appName:'TAGO H5',platform:'web',transport:localProxy?'lp':'ws',persist:false})
+      const endpoint=new URL(bootstrap.endpoint)
+      tinode=new createTinode({host:endpoint.host,secure:endpoint.protocol==='https:',apiKey:bootstrap.apiKey,appName:'TAGO H5',platform:'web',transport:'ws',persist:false})
+      tinode.onDisconnect=()=>{connected.value=false}
       await tinode.connect()
       await waitForChatHandshake(tinode)
       await tinode.login(bootstrap.authenticationScheme,encodeChatSecret(bootstrap.ticket))
@@ -92,7 +92,7 @@ export function useTinodeConversation() {
       activeTopic.onData=ingest
       try{
         await Promise.race([
-          activeTopic.subscribe({data:{limit:50}}),
+          activeTopic.subscribe({what:'data',data:{limit:50}}),
           new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('聊天活动订阅超时')),CHAT_SUBSCRIBE_TIMEOUT_MS)),
         ])
         const history:TinodeMessage[]=[]
@@ -126,7 +126,10 @@ export function useTinodeConversation() {
       if(!tinode||!topic||!activeTopicHandle){sendError.value='聊天连接已断开，请稍后重试';return false}
       // 避开 tinode-sdk 0.25.x Topic.publish 的错误回调缺陷：发送失败时它会无参数触发 onData，
       // 既覆盖服务端原始错误，也可能让消息被误判为发送成功。直接走客户端发布可保留真实 reject。
-      const published=await tinode.publish(activeTopicHandle,text.trim())
+      const clientMessageId=crypto.randomUUID()
+      const message=tinode.createMessage(activeTopicHandle,text.trim(),true)
+      message.head={clientMessageId}
+      const published=await tinode.publishMessage(message)
       ingest({seq:published.params?.seq,from:me||undefined,ts:published.ts,content:text.trim()})
       return true
     }catch(cause){sendError.value=cause instanceof Error?cause.message:'消息发送失败';return false}finally{sending.value=false}}
