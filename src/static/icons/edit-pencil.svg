@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="88" viewBox="0 0 72 88" fill="none">
+  <title>编辑</title>
+  <g stroke="#626D76" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 57 44 10Q47 5 52 8L60 13Q65 16 62 22L30 70 10 78Z" fill="#FFD477"/>
+    <path d="M39 18 44 10Q47 5 52 8L60 13Q65 16 62 22L58 28Z" fill="#D9D9D7"/>
+    <path d="m12 57 18 13-20 8Z" fill="#F6EEDB"/>
+  </g>
+  <path d="m18 55 24-35 5 3-24 36Z" fill="#FFF1BE"/>
+  <path d="m52 30 4 3-24 35-4-3Z" fill="#EDB75D"/>
+  <path d="m11 67 9 7-10 4Z" fill="#626D76"/>
+  <path d="m47 12 11 7" stroke="#F5F3EE" stroke-width="3" stroke-linecap="round"/>
+</svg>

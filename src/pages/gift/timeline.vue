@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import dayjs from 'dayjs'
 import { computed, shallowRef } from 'vue'
 import type { components } from '@/api/types/generated'
 import { getWalletBalance, listWalletEntries } from '@/api/wallet'
 import AppHeader from '@/components/business/AppHeader.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
+import { goBack } from '@/utils/navigation'
 type Balance=components['schemas']['WalletBalance'];type Entry=components['schemas']['WalletEntry']
 const balance=shallowRef<Balance|null>(null),entries=shallowRef<Entry[]>([]),filter=shallowRef<'all'|'income'|'expense'>('all'),loading=shallowRef(false),error=shallowRef('')
 const visible=computed(()=>entries.value.filter(item=>filter.value==='all'||(filter.value==='income'?Number(item.delta)>0:Number(item.delta)<0)))
@@ -15,16 +16,17 @@ const stickers=['/static/stickers/sticker-book.png','/static/stickers/sticker-mo
 function entryTitle(entry:Entry){return sourceLabels[entry.sourceType]||entry.sourceType.replaceAll('_',' ').toLowerCase()}
 function entryStory(entry:Entry){const amount=Math.abs(Number(entry.delta));return Number(entry.delta)>=0?`这一次收下了 ${amount} 枚 T 币，让故事继续往前。`:`这一次花出 ${amount} 枚 T 币，替期待多争取一点被看见。`}
 async function load(){loading.value=true;error.value='';try{[balance.value,entries.value]=await Promise.all([getWalletBalance(),listWalletEntries({limit:50})])}catch(cause){error.value=cause instanceof Error?cause.message:'钱包记录加载失败'}finally{loading.value=false}}
-function goBack(){uni.navigateBack()} onShow(load)
+onShow(load)
+onLoad(query=>{if(query?.filter==='income'||query?.filter==='expense')filter.value=query.filter})
 </script>
 <template>
   <view class="tago-page tago-page--detail wallet-page">
     <AppHeader back title="礼物路书" subtitle="每一枚 T 币，都记着一次抵达" @back="goBack" />
     <AsyncState :loading="loading" :error="error" @retry="load">
       <view class="balance-paper">
-        <view><text>此刻拥有</text><b>{{ balance?.available || '0' }}</b><small>枚 T 币</small></view>
+        <view><text>此刻拥有</text><b>{{ balance?.available ?? '—' }}</b><small>枚 T 币</small></view>
         <image src="/static/stickers/books.png" mode="aspectFit" />
-        <text class="balance-paper__note">总额 {{ balance?.balance || '0' }} · 留存 {{ balance?.reserved || '0' }}</text>
+        <text class="balance-paper__note">总额 {{ balance?.balance ?? '—' }} · 留存 {{ balance?.reserved ?? '—' }}</text>
       </view>
       <view class="chapter"><i /><view><b>我们的礼物路书</b><small>把相遇里发生过的流动，一页页收好</small></view><i /></view>
       <view class="filters"><button v-for="item in [{k:'all',l:'全部'},{k:'income',l:'收到'},{k:'expense',l:'送出'}]" :key="item.k" :class="{active:filter===item.k}" @click="filter=item.k as typeof filter">{{ item.l }}</button></view>

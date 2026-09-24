@@ -15,7 +15,7 @@ export function useApplicationsData() {
     error.value = ''
     try {
       await ensureBackendSession()
-      const page = await listApplications({ state: 'PENDING', limit: 30 })
+      const page = await listApplications({ direction: 'INCOMING', state: 'PENDING', limit: 30 })
       applications.value = page.items.map(applicationDtoToItem)
     }
     catch (cause) {

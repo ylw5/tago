@@ -3,10 +3,8 @@ import type { Tinode, TinodeMessage, TinodeTopic } from 'tinode-sdk'
 import * as TinodeModule from 'tinode-sdk'
 import { createChatConnection, createConversationConnection, getChatDetail, getEncounterDetail, listEncounters } from '@/api/chat'
 import type { ConversationDetailDto, EncounterDetailDto } from '@/api/chat'
-import { FIXTURES_ENABLED } from '@/api/client'
-import { fixtureChatMessages, fixtureChatReply } from '@/mocks/fixtures'
 
-export interface LiveMessage { id:string; text:string; mine:boolean; time:string; sequence:number }
+export interface LiveMessage { id:string; text:string; mine:boolean; time:string; sequence:number; read?:boolean }
 
 type TinodeFactory = typeof TinodeModule.Tinode
 // Node resolves this UMD package to { default: { Tinode } }; Vite may expose the named class.
@@ -40,42 +38,18 @@ export function useTinodeConversation() {
   const loading=shallowRef(false),connecting=shallowRef(false),sending=shallowRef(false),error=shallowRef(''),sendError=shallowRef(''),connected=shallowRef(false)
   let tinode:Tinode|null=null, topic:TinodeTopic|null=null, me:string|null=null
   let activeTopicHandle:string|null=null
-  let fixtureSequence=0
-  let chatActivityFallback=false
 
   function textOf(message?:TinodeMessage){return !message?'':typeof message.content==='string'?message.content:message.content?.txt||''}
-  function ingest(message?:TinodeMessage){const text=textOf(message);if(!message||!text)return;const sequence=message.seq||Date.now();const item:LiveMessage={id:String(sequence),sequence,text,mine:message.from===me,time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence)}
-  function pushLocal(text:string,mine:boolean){fixtureSequence+=1;const item:LiveMessage={id:`local-${fixtureSequence}`,sequence:fixtureSequence,text,mine,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};messages.value=[...messages.value,item]}
-  function useChatActivityFallback(conversationId:string){
-    // 聊天活动服务单接口降级：REST 会话与相遇数据仍来自真实后端。
-    chatActivityFallback=true
-    topic=null
-    activeTopicHandle=null
-    tinode?.disconnect()
-    tinode=null
-    const script=fixtureChatMessages(conversationId)
-    fixtureSequence=Math.max(0,...script.map(item=>item.sequence))
-    messages.value=script
-  }
-
+  function readByPeer(sequence:number){try{return (topic?.msgReadCount(sequence)||0)>0}catch{return false}}
+  function ingest(message?:TinodeMessage){const text=textOf(message);if(!message||!text)return;const sequence=message.seq||Date.now();const mine=message.from===me;const item:LiveMessage={id:String(sequence),sequence,text,mine,read:mine&&readByPeer(sequence),time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence);if(!mine&&message.seq&&topic)try{topic.noteRead(message.seq)}catch{/* 已读回执失败不影响消息展示 */}}
+  function refreshReadState(){messages.value=messages.value.map(item=>item.mine?{...item,read:readByPeer(item.sequence)}:item)}
   async function connect(conversationId:string){
     connecting.value=true
-    chatActivityFallback=false
     topic=null
     activeTopicHandle=null
     connected.value=false
     messages.value=[]
     try{
-      if(FIXTURES_ENABLED){
-        // 静态演示模式：不连接真实聊天引擎，直接播放静态消息剧本
-        me='me'
-        const script=fixtureChatMessages(conversationId)
-        fixtureSequence=Math.max(0,...script.map(item=>item.sequence))
-        messages.value=script
-        await new Promise(resolve=>setTimeout(resolve,350))
-        connected.value=true
-        return
-      }
       const conversation=await createConversationConnection(conversationId)
       // Tinode ticket is single-use: fetch the topic first, then issue the login ticket.
       const bootstrap=await createChatConnection()
@@ -90,19 +64,19 @@ export function useTinodeConversation() {
       topic=activeTopic
       activeTopicHandle=conversation.topicHandle
       activeTopic.onData=ingest
-      try{
-        await Promise.race([
-          activeTopic.subscribe({what:'data',data:{limit:50}}),
-          new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('聊天活动订阅超时')),CHAT_SUBSCRIBE_TIMEOUT_MS)),
-        ])
-        const history:TinodeMessage[]=[]
-        activeTopic.messages(message=>history.push(message))
-        history.forEach(ingest)
-      }catch{
-        useChatActivityFallback(conversationId)
-      }
+      activeTopic.onInfo=info=>{if(info.what==='read')refreshReadState()}
+      await Promise.race([
+        // sub 元数据携带对方的 read 序号，用于展示「已读」
+        activeTopic.subscribe({what:'sub data',data:{limit:50}}),
+        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('聊天活动订阅超时')),CHAT_SUBSCRIBE_TIMEOUT_MS)),
+      ])
+      const history:TinodeMessage[]=[]
+      activeTopic.messages(message=>history.push(message))
+      history.forEach(ingest)
+      refreshReadState()
+      try{activeTopic.noteRead()}catch{/* 已读回执失败不影响消息展示 */}
       connected.value=true
-    }catch(cause){connected.value=false;throw cause}finally{connecting.value=false}
+    }catch(cause){connected.value=false;topic=null;activeTopicHandle=null;tinode?.disconnect();tinode=null;throw cause}finally{connecting.value=false}
   }
   async function load(conversationId:string){loading.value=true;error.value='';try{const [conversation,history]=await Promise.all([getChatDetail(conversationId),listEncounters(conversationId,{limit:30})]);detail.value=conversation;encounters.value=history.items;await connect(conversationId)}catch(cause){error.value=cause instanceof Error?cause.message:'聊天连接失败'}finally{loading.value=false}}
   async function send(text:string){
@@ -110,19 +84,6 @@ export function useTinodeConversation() {
     sending.value=true
     sendError.value=''
     try{
-      if(FIXTURES_ENABLED){
-        // 静态演示模式：本地回显 + 一条预设回复，让对话可以完整走通
-        pushLocal(text.trim(),true)
-        await new Promise(resolve=>setTimeout(resolve,700))
-        pushLocal(fixtureChatReply(text.trim()),false)
-        return true
-      }
-      if(chatActivityFallback){
-        pushLocal(text.trim(),true)
-        await new Promise(resolve=>setTimeout(resolve,700))
-        pushLocal(fixtureChatReply(text.trim()),false)
-        return true
-      }
       if(!tinode||!topic||!activeTopicHandle){sendError.value='聊天连接已断开，请稍后重试';return false}
       // 避开 tinode-sdk 0.25.x Topic.publish 的错误回调缺陷：发送失败时它会无参数触发 onData，
       // 既覆盖服务端原始错误，也可能让消息被误判为发送成功。直接走客户端发布可保留真实 reject。

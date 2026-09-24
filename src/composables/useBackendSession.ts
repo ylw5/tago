@@ -4,10 +4,10 @@ import { useUserStore } from '@/stores/user'
 
 let sessionTask: ReturnType<typeof getSession> | null = null
 
-export async function ensureBackendSession() {
+export async function ensureBackendSession(force = false) {
   const userStore = useUserStore()
-  if (userStore.isAuthenticated && userStore.session) return userStore.session
   if (sessionTask) return sessionTask
+  if (!force && userStore.isAuthenticated && userStore.session) return userStore.session
 
   sessionTask = (async () => {
     const existing = await getSession()
@@ -22,6 +22,10 @@ export async function ensureBackendSession() {
 
   try {
     return await sessionTask
+  }
+  catch (error) {
+    if (error instanceof ApiError && error.statusCode === 401) userStore.clear()
+    throw error
   }
   finally {
     sessionTask = null

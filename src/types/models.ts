@@ -6,6 +6,7 @@ export interface UserSummary {
   name: string
   city: string
   avatar: string
+  avatarId?: string
 }
 
 export interface QAItem {
@@ -42,8 +43,12 @@ export interface ConversationItem {
   id: string
   user: UserSummary
   tagTitle: string
+  /** 认识缘由的 Tag 原文；没有相遇快照时为空 */
+  reasonTag?: string
   preview: string
   timeLabel: string
+  /** 最近一次活动时间（ISO），用于折叠长期未联系的会话 */
+  lastActiveAt: string
   unread: number
   marker?: string
 }

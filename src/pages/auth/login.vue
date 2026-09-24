@@ -6,7 +6,7 @@ import AuthEntryPage from '@/components/auth/AuthEntryPage.vue'
 const redirect = shallowRef('/pages/discover/index')
 
 onLoad((query) => {
-  if (typeof query?.redirect === 'string' && query.redirect.startsWith('/pages/')) redirect.value = decodeURIComponent(query.redirect)
+  if (typeof query?.redirect === 'string' && query.redirect.startsWith('/pages/') && !query.redirect.startsWith('/pages/auth/')) redirect.value = query.redirect
 })
 </script>
 

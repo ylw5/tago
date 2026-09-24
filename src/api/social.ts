@@ -65,12 +65,6 @@ export function customizeTagQuestion(tagId: string, slot: number, body: componen
   })
 }
 
-export function customizeTagQuestions(tagId: string, body: components['schemas']['CustomizeQuestions']) {
-  return request<TagDto, components['schemas']['CustomizeQuestions']>({
-    path: `/v1/tags/${tagId}/questions`, method: 'PUT', body, idempotent: true,
-  })
-}
-
 export function savePublisherAnswer(tagId: string, slot: number, body: components['schemas']['PublisherAnswer']) {
   return request<TagDto, components['schemas']['PublisherAnswer']>({
     path: `/v1/tags/${tagId}/answers/${slot}`, method: 'PUT', body, idempotent: true,

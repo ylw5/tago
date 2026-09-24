@@ -6,6 +6,7 @@ import SettingsGroup from '@/components/business/SettingsGroup.vue'
 import type { SettingsRow } from '@/components/business/SettingsGroup.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { useServiceOverview } from '@/composables/useServiceOverview'
+import { goBack } from '@/utils/navigation'
 
 const { loading, error, lastSyncedAt, status, identityRows, contentRows, walletRows, chatRows, load, setBlocked, lookupOperation, acceptPolicy } = useServiceOverview()
 const focus = shallowRef('')
@@ -15,7 +16,6 @@ const operationKey = shallowRef('')
 const operationResult = shallowRef('')
 const working = shallowRef(false)
 
-function goBack() { uni.navigateBack() }
 function openRow(row: SettingsRow) {
   if (row.id === 'profile' || row.id === 'avatars' || row.id === 'session') uni.navigateTo({ url: '/pages/account/index' })
   else if (row.id === 'tag') uni.navigateTo({ url: '/pages/tag/compose' })

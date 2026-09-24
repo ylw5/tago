@@ -34,18 +34,29 @@ export function durationLabel(value?: string | null) {
 
 export function identityToUser(identity: Identity, fallbackId: string): UserSummary {
   const name = identity?.displayName || 'TAGO 用户'
-  // 演示阶段：把非真实用户映射到 static/avatars/u{0..6}.png，让各页面头像贴近设计稿
-  const avatarIndex = Array.from(name).reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 7
   return {
-    id: identity?.publicId ? `u${avatarIndex}` : fallbackId,
+    id: identity?.publicId || fallbackId,
     name,
     // PublicIdentityView 没有 city 字段，用 @publicId 作为身份位置展示
     city: identity?.publicId ? `@${identity.publicId}` : '线上',
     avatar: name.slice(0, 1),
+    avatarId: identity?.avatarId,
   }
 }
 
 const modeLabels: Record<string, string> = { NATURAL: '自然相遇', PERSONALIZED: '为你挑选' }
+
+export const DEFAULT_TAG_SUMMARY = '正在等待有共鸣的人～'
+
+/** 后端降级排序时 reason 是「按…排序」这类系统说明，不适合当作用户简介展示 */
+function recommendationSummary(reason?: string | null) {
+  const text = reason?.trim() || ''
+  return !text || /^按.*排序$/.test(text) ? '' : text
+}
+
+export function publisherSummary(item: TagDto) {
+  return [...item.publisherAnswers].sort((a, b) => a.slot - b.slot).find(answer => answer.text.trim())?.text.trim() || ''
+}
 
 export function recommendationToTag(item: Recommendation, index: number, generatedAt?: string | null): TagItem {
   const tone = stableTone(item.tagId)
@@ -53,7 +64,7 @@ export function recommendationToTag(item: Recommendation, index: number, generat
     id: item.tagId,
     author: identityToUser(item.ownerIdentity, `api-recommendation-${index}`),
     title: item.body.startsWith('#') ? item.body : `# ${item.body}`,
-    summary: item.reason,
+    summary: recommendationSummary(item.reason),
     timeLabel: relativeTime(generatedAt),
     labels: [
       modeLabels[item.mode] || '自然相遇',
@@ -86,7 +97,7 @@ export function tagDtoToTag(item: TagDto): TagItem {
     id: item.id,
     author: identityToUser(item.ownerIdentity, `api-tag-${item.ownerId}`),
     title: item.body.startsWith('#') ? item.body : `# ${item.body}`,
-    summary: item.embedding?.state === 'READY' ? '正在等待有共鸣的人～' : '这条 Tag 正在生成更合适的推荐～',
+    summary: publisherSummary(item) || (item.embedding?.state === 'READY' ? DEFAULT_TAG_SUMMARY : '这条 Tag 正在生成更合适的推荐～'),
     timeLabel: relativeTime(item.publishedAt),
     labels: [item.encounterMode === 'ONLINE' ? '线上' : item.encounterMode === 'OFFLINE' ? '线下' : '都可以', durationLabel(item.duration)],
     motif: pickMotif(item.id),
@@ -126,14 +137,33 @@ export function conversationDtoToItem(
 ): ConversationItem {
   const user = identityToUser(item.peerIdentity, `api-conversation-${item.peerId}`)
   // 认识缘由：优先取相遇快照里的 Tag 名（真实数据），否则回退占位文案
-  const tagTitle = options?.reasonTag ? `# ${options.reasonTag}` : `与 ${user.name} 的会话`
+  const reasonTag = options?.reasonTag?.trim() || undefined
+  const tagTitle = reasonTag ? `# ${reasonTag}` : `与 ${user.name} 的会话`
+  const lastActiveAt = item.lastMessagePreview?.sentAt || item.activity?.lastMessageAt || item.createdAt
+  const fallbackPreview = item.activity?.state === 'NO_MESSAGES' ? '还没有聊过，先打个招呼吧～' : `建立于${relativeTime(item.createdAt)}`
   return {
     id: item.id,
     user,
     tagTitle,
-    preview: options?.meta?.preview || `建立于${relativeTime(item.createdAt)}`,
-    timeLabel: relativeTime(item.createdAt),
+    reasonTag,
+    preview: item.lastMessagePreview?.text?.trim() || options?.meta?.preview || fallbackPreview,
+    timeLabel: chatTimeLabel(lastActiveAt),
+    lastActiveAt,
     unread: options?.meta?.unread || 0,
-    marker: options?.meta?.marker,
+    marker: options?.meta?.marker || item.summary?.text?.trim() || undefined,
   }
+}
+
+const weekdayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+/** 会话列表时间：当天用相对时间，昨天/本周带具体时刻，更早按天数 */
+export function chatTimeLabel(value: string, now = dayjs()) {
+  const time = dayjs(value)
+  const minutes = Math.max(0, now.diff(time, 'minute'))
+  if (minutes < 1) return '刚刚'
+  if (time.isSame(now, 'day')) return minutes < 60 ? `${minutes}分钟前` : `${Math.floor(minutes / 60)}小时前`
+  const days = now.startOf('day').diff(time.startOf('day'), 'day')
+  if (days === 1) return `昨天 ${time.format('HH:mm')}`
+  if (days < 7 && time.day() < now.day()) return `${weekdayLabels[time.day()]} ${time.format('HH:mm')}`
+  return `${days}天前`
 }

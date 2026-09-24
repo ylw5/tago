@@ -2,9 +2,9 @@
 import AuthField from '@/components/auth/AuthField.vue'
 import AuthShell from '@/components/auth/AuthShell.vue'
 import { useAuthFlow } from '@/composables/useAuthFlow'
+import { goBack } from '@/utils/navigation'
 
 const { form, challengeId, retryAfter, submitting, error, message, passwordMatches, requestCode, verify } = useAuthFlow('reset')
-function goBack() { uni.navigateBack() }
 async function submit() { if (await verify()) setTimeout(() => uni.redirectTo({ url:'/pages/auth/login' }), 700) }
 </script>
 

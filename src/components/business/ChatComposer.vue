@@ -20,15 +20,20 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   <view class="chat-composer">
     <text v-if="error" class="chat-composer__error" role="alert">{{ error }}</text>
     <view class="chat-composer__row">
-      <button class="chat-composer__gift" aria-label="送礼物" @click="emit('gift')">🎁</button>
-      <textarea
-        v-model="draft"
-        class="chat-composer__input"
-        :disabled="!connected"
-        maxlength="1000"
-        auto-height
-        :placeholder="connected ? '输入消息…' : '聊天服务连接后可发送'"
-      />
+      <view class="chat-composer__add" aria-hidden="true" />
+      <view class="chat-composer__field">
+        <textarea
+          v-model="draft"
+          class="chat-composer__input"
+          :disabled="!connected"
+          maxlength="1000"
+          auto-height
+          :placeholder="connected ? '输入消息…' : '聊天服务连接后可发送'"
+        />
+        <button class="chat-composer__gift" aria-label="送礼物" @click="emit('gift')">
+          <image src="/static/stickers/gift.png" mode="aspectFit" aria-hidden="true" />
+        </button>
+      </view>
       <button
         class="chat-composer__send"
         :disabled="!canSend"
@@ -43,10 +48,14 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
 
 <style scoped lang="scss">
 .chat-composer {
+  position: relative;
+  z-index: 2;
   flex: none;
-  padding: 12rpx 4rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--tago-line);
-  background: linear-gradient(180deg, rgba(239, 241, 234, .96), #e9ebe4 32%);
+  margin: 0 -24rpx;
+  padding: 16rpx 28rpx calc(16rpx + env(safe-area-inset-bottom));
+  border-radius: 32rpx 32rpx 0 0;
+  background: rgba(255, 254, 250, .97);
+  box-shadow: 0 -8rpx 24rpx rgba(39, 68, 56, .08);
 }
 
 .chat-composer__error {
@@ -61,18 +70,16 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
 }
 
 .chat-composer__row {
-  display: grid;
-  grid-template-columns: 72rpx minmax(0, 1fr) 100rpx;
-  align-items: end;
-  gap: 13rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
 }
 
+.chat-composer__add,
 .chat-composer__gift,
 .chat-composer__send {
   display: grid;
-  width: 100%;
   min-width: 0;
-  height: 72rpx;
   margin: 0;
   padding: 0;
   place-items: center;
@@ -80,44 +87,87 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   line-height: 1;
 }
 
+.chat-composer__add {
+  flex: none;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--tago-primary);
+  position: relative;
+}
+
+.chat-composer__add::before,
+.chat-composer__add::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 999rpx;
+  background: #fff;
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.chat-composer__add::before { width: 30rpx; height: 4rpx; }
+.chat-composer__add::after { width: 4rpx; height: 30rpx; }
+
+.chat-composer__field {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  border-radius: 34rpx;
+  background: #f1f0ea;
+}
+
 .chat-composer__gift::after,
 .chat-composer__send::after { border: 0; }
 
 .chat-composer__gift {
-  color: #fff;
-  border-radius: 50%;
-  background: var(--tago-primary);
-  box-shadow: 0 7rpx 16rpx rgba(32, 88, 79, .18);
-  font-size: 28rpx;
+  position: absolute;
+  top: 50%;
+  right: 14rpx;
+  width: 52rpx;
+  height: 52rpx;
+  transform: translateY(-50%);
+  background: transparent;
+}
+
+.chat-composer__gift image {
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .chat-composer__input {
   display: block;
   width: 100%;
   min-width: 0;
-  min-height: 76rpx;
-  max-height: 190rpx;
-  padding: 18rpx 23rpx;
-  border: 1rpx solid rgba(32, 88, 79, .07);
-  border-radius: 28rpx;
-  background: #fffdf6;
-  box-shadow: 0 6rpx 16rpx rgba(39, 68, 56, .06);
-  font-size: 22rpx;
-  line-height: 1.5;
+  /* uni-textarea 的内部 wrapper 继承 min-height，外层 padding 另算，这里只写一行文字高 */
+  min-height: 37rpx;
+  max-height: 148rpx;
+  padding: 16rpx 76rpx 16rpx 26rpx;
+  border: 0;
+  border-radius: 34rpx;
+  background: transparent;
+  font-size: 25rpx;
+  line-height: 1.45;
 }
 
 .chat-composer__send {
+  flex: none;
+  width: 116rpx;
+  height: 68rpx;
   color: #fff;
   border-radius: 999rpx;
   background: var(--tago-primary);
-  box-shadow: 0 7rpx 16rpx rgba(32, 88, 79, .16);
-  font-size: 21rpx;
+  font-size: 25rpx;
   font-weight: 800;
 }
 
-.chat-composer__gift[disabled],
 .chat-composer__send[disabled] {
+  color: #fff;
+  background: var(--tago-primary);
   box-shadow: none;
-  opacity: .45;
+  opacity: .5;
 }
 </style>

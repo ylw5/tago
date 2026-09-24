@@ -16,7 +16,10 @@ declare module 'tinode-sdk' {
   export interface TinodeMessage { seq?:number; from?:string; ts?:Date|string; content?:string|{txt?:string} }
   export interface TinodeTopic {
     onData?: (message:TinodeMessage)=>void
+    onInfo?: (info:{ what:string; from?:string; seq?:number })=>void
     subscribe(get?:unknown, set?:unknown): Promise<unknown>
+    noteRead(seq?:number): void
+    msgReadCount(seq:number): number
     publish(content:string, noEcho?:boolean): Promise<{ params?:{ seq?:number } }>
     messages(callback:(message:TinodeMessage)=>void): void
   }

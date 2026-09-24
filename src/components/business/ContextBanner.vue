@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { UserSummary } from '@/types/models'
 import AvatarBadge from './AvatarBadge.vue'
+import { goBack } from '@/utils/navigation'
 defineProps<{ user:UserSummary; tagTitle:string; day:number }>()
 const emit = defineEmits<{ answers:[] }>()
-function goBack() { uni.navigateBack() }
 </script>
 
 <template>

@@ -10,6 +10,7 @@ interface Props {
   subtitle: string
   back?: boolean
   compact?: boolean
+  search?: boolean
   settings?: boolean
   variant?: HeaderVariant
   slogan?: string
@@ -35,6 +36,12 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
       <text v-else class="header__eyebrow">TAGO</text>
       <text class="header__title">{{ title }}</text>
       <text class="header__subtitle">{{ subtitle }}</text>
+    </view>
+    <view v-if="search" class="header__search" aria-hidden="true">
+      <svg viewBox="0 0 32 32">
+        <circle cx="13.5" cy="13.5" r="8.5" />
+        <path d="m20 20 7 7" />
+      </svg>
     </view>
     <SettingsIconButton v-if="settings" class="header__settings" @click="emit('settings')" />
     <view v-if="isBranded" class="header__cat-art">
@@ -88,6 +95,9 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
 .header__back::before { content: '‹'; }
 .header__back::after { border: 0; }
 .header__settings { position:absolute; z-index:4; top:calc(30rpx + env(safe-area-inset-top)); right:12rpx; }
+.header__search { position:absolute; z-index:4; top:calc(30rpx + env(safe-area-inset-top)); right:80rpx; display:grid; width:64rpx; height:64rpx; place-items:center; color:var(--tago-ink); }
+.header__search svg { width:42rpx; height:42rpx; overflow:visible; }
+.header__search circle,.header__search path { fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
 .header__copy { position: relative; z-index: 2; display:flex; min-width:0; flex:1; flex-direction:column; justify-content:center; }
 .header--home .header__copy { padding-right:218rpx; }
 .header--auth .header__copy { padding-right:172rpx; }
@@ -107,7 +117,7 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
 .header__subtitle { margin-top:8rpx; max-width:600rpx; color:var(--tago-muted); font-size:21rpx; line-height:1.42; }
 .header--compact .header__title { font-size:34rpx; line-height:1.25; }
 .header--compact .header__subtitle { font-size:19rpx; }
-.header--home .header__title { margin-top:8rpx; font-family:"KaiTi","STKaiti","LXGW WenKai Screen",sans-serif; }
+.header--home .header__title { margin-top:8rpx; }
 .header--home .header__subtitle { margin-top:6rpx; }
 .header--auth .header__logo { width:230rpx; height:82rpx; }
 .header--auth .header__title { margin-top:22rpx; font-size:52rpx; line-height:1.1; letter-spacing:4rpx; }
@@ -137,7 +147,10 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
   .header--home .header__cat-art { right:-54rpx; width:382rpx; height:191rpx; }
 }
 
-@media (min-width:361px) and (max-width:430px) {
+@media (min-width:361px) and (max-width:480px) {
   .header--home { min-height:204rpx; }
+  .header--home .header__copy { padding-right:190rpx; }
+  .header--home .header__logo { width:220rpx; height:68rpx; }
+  .header--home .header__cat-art { right:-24rpx; width:360rpx; height:180rpx; }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, shallowRef } from 'vue'
 import type { AvatarDto, PublicIdentityDto } from '@/api/account'
 import { changePassword, getProfile, listAvatars, updateProfile } from '@/api/account'
@@ -12,7 +12,9 @@ import AppHeader from '@/components/business/AppHeader.vue'
 import SettingsGroup from '@/components/business/SettingsGroup.vue'
 import type { SettingsRow } from '@/components/business/SettingsGroup.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
+import AvatarImage from '@/components/ui/AvatarImage.vue'
 import { useUserStore } from '@/stores/user'
+import { goBack as leavePage } from '@/utils/navigation'
 
 type Wallet = components['schemas']['WalletBalance']
 type Panel = 'main' | 'profile' | 'security' | 'tag'
@@ -32,7 +34,7 @@ const error = shallowRef('')
 const userStore = useUserStore()
 
 const canSave = computed(() => Boolean(profile.value && displayName.value.trim() && avatarId.value))
-const selectedAvatar = computed(() => avatars.value.find(item => item.id === avatarId.value)?.url || '')
+const selectedAvatar = computed(() => avatars.value.find(item => item.id === avatarId.value))
 const headerTitle = computed(() => ({ main: '设置', profile: '个人资料', security: '账号安全', tag: '我的 Tag' })[panel.value])
 const headerSubtitle = computed(() => ({ main: '让相遇变得更合心意', profile: '把真实的你留在这里', security: '保护账号与登录会话', tag: '管理正在发生的表达' })[panel.value])
 
@@ -105,19 +107,24 @@ async function signOut(all = false) {
 
 function goBack() {
   if (panel.value !== 'main') panel.value = 'main'
-  else uni.navigateBack()
+  else leavePage()
 }
 
+function openProfile() { uni.navigateTo({ url: '/pages/account/profile' }) }
+
 function openRow(row: SettingsRow) {
-  if (row.id === 'profile') panel.value = 'profile'
+  if (row.id === 'profile') openProfile()
   else if (row.id === 'security') panel.value = 'security'
   else if (row.id === 'tag') panel.value = 'tag'
   else if (row.id === 'history') uni.navigateTo({ url: '/pages/tag/history' })
-  else if (row.id === 'wallet') uni.navigateTo({ url: '/pages/gift/timeline' })
+  else if (row.id === 'wallet') uni.navigateTo({ url: '/pages/wallet/index' })
   else if (row.id === 'exposure') uni.navigateTo({ url: '/pages/exposure/index' })
   else if (row.id === 'service' || row.id === 'blocks' || row.id === 'chat') uni.navigateTo({ url: `/pages/service/index?focus=${row.id}` })
 }
 
+onLoad((query) => {
+  if (query?.panel === 'profile' || query?.panel === 'security' || query?.panel === 'tag') panel.value = query.panel
+})
 onShow(load)
 
 function openComposer() {
@@ -130,10 +137,9 @@ function openComposer() {
     <AppHeader back :title="headerTitle" :subtitle="headerSubtitle" @back="goBack" />
     <AsyncState :loading="loading" :error="error" @retry="load">
       <view v-if="profile && panel === 'main'" class="settings-content">
-        <button class="profile-summary" @click="panel = 'profile'">
+        <button class="profile-summary" @click="openProfile">
           <view class="profile-summary__avatar">
-            <image v-if="selectedAvatar" :src="selectedAvatar" mode="aspectFill" />
-            <text v-else>{{ profile.displayName.slice(0, 1) }}</text>
+            <AvatarImage :id="avatarId" :url="selectedAvatar?.url" />
           </view>
           <view class="profile-summary__copy">
             <text>{{ profile.displayName }}</text>
@@ -157,8 +163,7 @@ function openComposer() {
         <input v-model="displayName" class="paper-input" maxlength="24" placeholder="你的昵称" />
         <scroll-view scroll-x class="avatar-strip">
           <button v-for="avatar in avatars" :key="avatar.id" class="avatar-option" :class="{ 'avatar-option--active': avatarId === avatar.id }" @click="avatarId = avatar.id">
-            <image v-if="avatar.url" :src="avatar.url" mode="aspectFill" />
-            <text v-else>{{ avatar.id.slice(0, 1) }}</text>
+            <AvatarImage :id="avatar.id" :url="avatar.url" />
           </button>
         </scroll-view>
         <button class="primary" :disabled="!canSave || saving" @click="saveProfile">保存资料</button>
@@ -187,7 +192,7 @@ function openComposer() {
 .profile-summary { display:grid; grid-template-columns:94rpx minmax(0,1fr) 28rpx; align-items:center; gap:18rpx; width:100%; min-height:150rpx; padding:22rpx 26rpx; color:var(--tago-ink); border:0; border-radius:20rpx 31rpx 19rpx 27rpx; background:linear-gradient(120deg,#fff5cf,#f7e9b9); box-shadow:var(--tago-shadow); text-align:left; transform:rotate(-.25deg); }
 .profile-summary::after,.session-actions button::after,.primary::after,.avatar-option::after,.danger-action::after { border:0; }
 .profile-summary__avatar { display:grid; place-items:center; width:88rpx; height:88rpx; overflow:hidden; color:#fff; border:5rpx solid rgba(255,255,255,.95); border-radius:50%; background:#7e9c90; font-size:30rpx; }
-.profile-summary__avatar image { width:100%; height:100%; }
+.profile-summary__avatar .avatar-image { width:100%; height:100%; }
 .profile-summary__copy { display:flex; min-width:0; flex-direction:column; }
 .profile-summary__copy>text { font-size:28rpx; font-weight:900; }
 .profile-summary__copy small { margin-top:5rpx; color:#5f675f; font-size:17rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -204,7 +209,7 @@ function openComposer() {
 .avatar-strip { width:100%; margin:4rpx 0 24rpx; white-space:nowrap; }
 .avatar-option { display:inline-grid; place-items:center; width:78rpx; height:78rpx; margin-right:14rpx; padding:0; overflow:hidden; border:4rpx solid transparent; border-radius:50%; background:var(--tago-primary-weak); }
 .avatar-option--active { border-color:var(--tago-accent); }
-.avatar-option image { width:100%; height:100%; }
+.avatar-option .avatar-image { width:100%; height:100%; }
 .primary,.danger-action { width:100%; height:74rpx; border:0; border-radius:999rpx; font-size:24rpx; line-height:74rpx; }
 .primary { color:#fff; background:var(--tago-primary); }
 .primary[disabled] { opacity:.5; }

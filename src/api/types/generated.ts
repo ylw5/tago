@@ -751,13 +751,23 @@ export interface components {
       state?: string | null;
       text?: string | null;
     };
+    ConversationPreviewView: {
+      sender?: string | null;
+      /** Format: date-time */
+      sentAt?: string | null;
+      /** Format: int64 */
+      sourceSeq?: number;
+      text?: string | null;
+    };
     ConversationView: {
       access: components["schemas"]["ConversationAccessView"];
       activity: components["schemas"]["ConversationActivityView"];
       /** Format: date-time */
       createdAt: string;
+      firstEncounter?: components["schemas"]["EncounterView"] | null;
       /** Format: uuid */
       id: string;
+      lastMessagePreview?: components["schemas"]["ConversationPreviewView"] | null;
       /** Format: uuid */
       peerId: string;
       peerIdentity: components["schemas"]["PublicIdentityView"] | null;

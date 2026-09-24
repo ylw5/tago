@@ -41,7 +41,7 @@ const emit = defineEmits<{ retry: [] }>()
 </template>
 
 <style scoped lang="scss">
-.async-state { display:grid; flex:1; min-height:0; }
+.async-state { display:grid; flex:1; grid-template-columns:minmax(0,1fr); min-height:0; }
 .async-state__content,.state { grid-area:1/1; }
 .state { z-index:1; display:flex; min-height:360rpx; flex-direction:column; align-items:center; justify-content:center; width:100%; padding:48rpx 32rpx; color:var(--tago-muted); text-align:center; background:var(--tago-paper, #f8f4e9); }
 .state__spinner { width:42rpx; height:42rpx; margin-bottom:22rpx; border:5rpx solid rgba(32,88,79,.14); border-top-color:var(--tago-primary); border-radius:50%; animation:spin .8s linear infinite; }

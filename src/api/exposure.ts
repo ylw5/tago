@@ -9,9 +9,9 @@ export function listExposureBids(query: { limit?: number; cursor?: string } = {}
   return request<components['schemas']['ExposureBidPage']>({ path: '/v1/exposure/bids', query })
 }
 
-export function createExposureBid(body: components['schemas']['ExposureBidInput'], idempotencyKey?: string) {
+export function createExposureBid(body: components['schemas']['ExposureBidInput'], idempotencyKey?: string, silent = false) {
   return request<components['schemas']['ExposureBidResult'], components['schemas']['ExposureBidInput']>({
-    path: '/v1/exposure/bids', method: 'POST', body, idempotent: true, idempotencyKey,
+    path: '/v1/exposure/bids', method: 'POST', body, idempotent: true, idempotencyKey, silent,
   })
 }
 

@@ -6,6 +6,7 @@ import {
   getAdjustmentBatch, listAdjustmentBatchItems, reauthenticate, retryAdjustmentBatch, unfreezeUser,
 } from '@/api/admin'
 import AppHeader from '@/components/business/AppHeader.vue'
+import { goBack } from '@/utils/navigation'
 
 type AdjustmentInput = components['schemas']['AdjustmentInput']
 type BatchInput = components['schemas']['BatchInput']
@@ -23,7 +24,6 @@ const retryItemIds = shallowRef('')
 const batchJson = shallowRef('[\n  {\n    "email": "",\n    "amount": "10",\n    "direction": "CREDIT",\n    "reasonCode": "MANUAL",\n    "reason": ""\n  }\n]')
 const adjustment = reactive<AdjustmentInput>({ email: '', amount: '10', direction: 'CREDIT', reasonCode: 'MANUAL', reason: '' })
 
-function goBack() { uni.navigateBack() }
 function summarize(value: unknown) {
   result.value = JSON.stringify(value, null, 2)
 }

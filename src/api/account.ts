@@ -1,15 +1,22 @@
 import type { components } from './types/generated'
 import { request } from './client'
 
-export type PublicIdentityDto = components['schemas']['PublicIdentityView']
+export type PublicIdentityDto = components['schemas']['PublicIdentityView'] & {
+  /** Only visible to the account owner; free-form, at most 32 characters. */
+  gender?: string | null
+  /** ISO date (YYYY-MM-DD). */
+  birthDate?: string | null
+}
 export type AvatarDto = components['schemas']['Avatar']
+/** displayName must equal the current name: the backend rejects renames with DISPLAY_NAME_IMMUTABLE. */
+export type ProfileUpdate = components['schemas']['PublicIdentityUpdate'] & Pick<PublicIdentityDto, 'gender' | 'birthDate'>
 
 export function getProfile() {
   return request<PublicIdentityDto>({ path: '/v1/account/profile' })
 }
 
-export function updateProfile(body: components['schemas']['PublicIdentityUpdate']) {
-  return request<PublicIdentityDto, components['schemas']['PublicIdentityUpdate']>({
+export function updateProfile(body: ProfileUpdate) {
+  return request<PublicIdentityDto, ProfileUpdate>({
     path: '/v1/account/profile', method: 'PUT', body,
   })
 }
