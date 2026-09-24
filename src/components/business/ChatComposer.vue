@@ -27,7 +27,6 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
           class="chat-composer__input"
           :disabled="!connected"
           maxlength="1000"
-          auto-height
           :placeholder="connected ? '输入消息…' : '聊天服务连接后可发送'"
         />
         <button class="chat-composer__gift" aria-label="送礼物" @click="emit('gift')">
@@ -142,9 +141,7 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   display: block;
   width: 100%;
   min-width: 0;
-  /* uni-textarea 的内部 wrapper 继承 min-height，外层 padding 另算，这里只写一行文字高 */
-  min-height: 37rpx;
-  max-height: 148rpx;
+  height: 69rpx;
   padding: 16rpx 76rpx 16rpx 26rpx;
   border: 0;
   border-radius: 34rpx;

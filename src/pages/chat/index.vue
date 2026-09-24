@@ -47,7 +47,6 @@ onLoad(q=>{
   <view class="chat-page">
     <view class="chat-shell">
       <image class="decor decor--leaf" src="/static/decor/leaf-sprig.png" mode="aspectFit" aria-hidden="true" />
-      <image class="decor decor--corners" src="/static/decor/flower-corners.png" mode="aspectFill" aria-hidden="true" />
 
       <view class="chat-header">
         <button class="chat-header__back" aria-label="返回" @click="goBack" />
@@ -131,7 +130,6 @@ onLoad(q=>{
 
 .decor { position:absolute; z-index:0; pointer-events:none; }
 .decor--leaf { top:44%; left:-36rpx; width:150rpx; height:180rpx; opacity:.8; transform:rotate(-12deg); }
-.decor--corners { right:0; bottom:110rpx; left:0; width:100%; height:240rpx; opacity:.9; }
 
 .chat-header {
   position:relative;
