@@ -19,7 +19,11 @@ const error = shallowRef('')
 const editing = shallowRef(false)
 
 const questions = computed(() => source.value?.questions.filter(q => q.generated && q.text) || [])
-const canPublish = computed(() => body.value.trim().length >= 4 && questions.value.length === 3 && questions.value.every(q => answers[q.slot]?.trim()))
+const bodyReady = computed(() => body.value.trim().length >= 4)
+const hasAnswers = computed(() => questions.value.some(q => answers[q.slot]?.trim()))
+const questionsStale = computed(() => Boolean(questions.value.length && source.value && source.value.body !== body.value.trim()))
+const refreshLabel = computed(() => questionsStale.value ? '按新 Tag 再生成' : '换一组')
+const canPublish = computed(() => bodyReady.value && questions.value.length === 3 && questions.value.every(q => answers[q.slot]?.trim()))
 const durationOptions = [
   { value: 'DAY', label: '即时' },
   { value: 'WEEK', label: '本周' },
@@ -88,8 +92,24 @@ async function replaceQuestions(value: TagDto) {
   return value
 }
 
+function requestGenerate() {
+  if (working.value || !bodyReady.value) return
+  if (questions.value.length && hasAnswers.value) {
+    uni.showModal({
+      title: refreshLabel.value,
+      content: '重新生成会清掉已写的回答。',
+      cancelText: '取消',
+      confirmText: '继续',
+      confirmColor: '#20584f',
+      success: ({ confirm }) => { if (confirm) generate() },
+    })
+    return
+  }
+  generate()
+}
+
 async function generate() {
-  if (body.value.trim().length < 4) return uni.showToast({ title: '先写下至少 4 个字', icon: 'none' })
+  if (!bodyReady.value) return uni.showToast({ title: '先写下至少 4 个字', icon: 'none' })
   working.value = true
   try {
     const value = await replaceQuestions(await ensureDraft())
@@ -153,7 +173,7 @@ onShow(load)
         <view class="tag-entry">
           <text class="tag-entry__hash">#</text>
           <textarea v-model="body" maxlength="25" placeholder="此刻你想和怎样的人发生什么？" placeholder-class="tag-placeholder" />
-          <text class="counter">{{ Array.from(body).length }}/25</text>
+          <text class="counter">4–25 个字 · {{ Array.from(body).length }}/25</text>
         </view>
         <view class="tag-hint">
           <image src="/static/illustrations/meet-seedling.png" mode="aspectFit" aria-hidden="true" />
@@ -162,7 +182,7 @@ onShow(load)
       </section>
 
       <section class="question-section">
-        <view class="section-head">
+        <view class="section-head" :class="{ 'section-head--generated': questions.length }">
           <view class="section-head__copy">
             <view class="section-title">
               <image src="/static/illustrations/meet-seedling.png" mode="aspectFit" aria-hidden="true" />
@@ -171,9 +191,10 @@ onShow(load)
             </view>
             <text class="section-subtitle">让想认识你的人，更容易理解这个 Tag。</text>
           </view>
-          <button class="refresh-set" :disabled="working" @click="generate">
-            <text class="refresh-set__icon" :class="{ spinning: working }">↻</text>换一组
+          <button class="refresh-set" :disabled="working || !bodyReady" @click="requestGenerate">
+            <text class="refresh-set__icon" :class="{ spinning: working }">{{ questions.length ? '↻' : '✦' }}</text>{{ questions.length ? refreshLabel : '帮我想 3 个问题' }}
           </button>
+          <text v-if="!bodyReady" class="generation-hint">先在上方写满 4 个字，就可以生成问题。</text>
         </view>
         <view v-if="questions.length" class="question-list">
           <article v-for="question in questions" :key="question.slot" class="question-card" :class="`question-card--${question.slot}`">
@@ -190,7 +211,6 @@ onShow(load)
             </view>
           </article>
         </view>
-        <view v-else class="question-empty">写完 Tag 后点「换一组」，AI 会为你生成三个问题。</view>
       </section>
 
       <section class="duration-section">
@@ -205,6 +225,7 @@ onShow(load)
       </section>
 
       <view class="publish-wrap">
+        <text v-if="!canPublish" class="publish-hint">写好 Tag 并回答全部 3 个问题后，即可发布。</text>
         <button class="publish" :class="{ 'is-idle': !canPublish }" :disabled="!canPublish || working" :loading="working" @click="publish">
           <svg class="publish__plane" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21.5 2.8 2.9 10.3c-.8.3-.8 1.5.1 1.8l6.3 2.1 2.1 6.3c.3.9 1.5.9 1.8.1l7.5-18.6c.3-.7-.4-1.4-1.2-1.2Z" />
@@ -351,9 +372,9 @@ onShow(load)
 
 .section-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12rpx;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18rpx;
   margin-bottom: 16rpx;
 }
 
@@ -362,6 +383,16 @@ onShow(load)
   min-width: 0;
   flex: 1;
   flex-direction: column;
+}
+
+.section-head--generated {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.section-head--generated .refresh-set {
+  margin-left: 0;
 }
 
 .section-title {
@@ -384,25 +415,32 @@ onShow(load)
   padding-left: 50rpx;
   color: #5f665e;
   font-size: 20rpx;
+  line-height: 1.6;
+}
+
+.generation-hint {
+  margin-left: 50rpx;
+  color: #5f665e;
+  font-size: 20rpx;
+  line-height: 1.5;
 }
 
 .refresh-set {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10rpx;
-  height: 66rpx;
-  margin: 0;
-  padding: 0 28rpx;
+  gap: 6rpx;
+  height: 64rpx;
+  margin: 0 0 0 50rpx;
+  padding: 0 20rpx;
   border: 0;
-  border-radius: 4rpx;
-  background: linear-gradient(180deg, #e3efd9, #d7e8cb);
-  box-shadow: 0 4rpx 10rpx rgba(39, 68, 56, .08);
+  border-radius: 12rpx;
+  background: #e7eedf;
   color: #20584f;
-  font-size: 25rpx;
+  font-size: 22rpx;
   font-weight: 800;
-  line-height: 66rpx;
-  transform: rotate(-2deg);
+  line-height: 64rpx;
+  white-space: nowrap;
 }
 
 .refresh-set::after,
@@ -412,11 +450,12 @@ onShow(load)
 }
 
 .refresh-set[disabled] {
-  opacity: .6;
+  background: #ebeae5;
+  color: #626960;
 }
 
 .refresh-set__icon {
-  font-size: 32rpx;
+  font-size: 24rpx;
   font-weight: 900;
 }
 
@@ -531,16 +570,6 @@ onShow(load)
   font-size: 18rpx;
 }
 
-.question-empty {
-  padding: 40rpx 20rpx;
-  border: 2rpx dashed rgba(32, 88, 79, .15);
-  border-radius: 20rpx;
-  color: var(--tago-muted);
-  font-size: 22rpx;
-  line-height: 1.65;
-  text-align: center;
-}
-
 .duration-section {
   margin-top: 36rpx;
 }
@@ -573,6 +602,15 @@ onShow(load)
 
 .publish-wrap {
   margin-top: 40rpx;
+}
+
+.publish-hint {
+  display: block;
+  margin-bottom: 16rpx;
+  color: #5f665e;
+  font-size: 20rpx;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .publish {
