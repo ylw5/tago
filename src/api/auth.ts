@@ -4,6 +4,8 @@ import { clearCsrf, request } from './client'
 type LoginInput = components['schemas']['LoginInput']
 type RecoveryInput = components['schemas']['RecoveryInput']
 type VerificationInput = components['schemas']['VerificationInput']
+type RegistrationInput = components['schemas']['RegistrationInput']
+type AgreementView = components['schemas']['AgreementView']
 type EmailInput = components['schemas']['EmailInput']
 type SessionView = components['schemas']['SessionView']
 type RegistrationView = components['schemas']['RegistrationView']
@@ -42,8 +44,14 @@ export function requestRegistrationCode(body: EmailInput) {
   return request<CodeRequest, EmailInput>({ path: '/v1/auth/registration-codes', method: 'POST', body })
 }
 
-export function register(body: VerificationInput) {
-  return request<RegistrationView, VerificationInput>({ path: '/v1/auth/register', method: 'POST', body })
+export function getRegistrationAgreement() {
+  return request<AgreementView>({ path: '/v1/auth/registration-agreement', csrf: false, silent: true })
+}
+
+export async function register(body: RegistrationInput) {
+  const result = await request<RegistrationView, RegistrationInput>({ path: '/v1/auth/register', method: 'POST', body })
+  clearCsrf()
+  return result
 }
 
 export function requestPasswordResetCode(body: EmailInput) {

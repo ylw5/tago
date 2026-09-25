@@ -17,7 +17,6 @@ function stepCarousel(step: number) {
 
 function openComposer() { uni.navigateTo({ url: '/pages/tag/compose?edit=1' }) }
 const drawerOpen = shallowRef(false)
-function openWallet() { uni.navigateTo({ url: '/pages/gift/timeline' }) }
 const bidOpen = shallowRef(false)
 function openPinnedTag(tag: TagItem) { uni.navigateTo({ url: `/pages/tag/detail?id=${encodeURIComponent(tag.id)}&pinned=1` }) }
 function openTag(tag: TagItem) {
@@ -39,7 +38,6 @@ onShow(load)
     <view class="discover-profile" @click="drawerOpen = true">
       <AvatarImage :id="avatarId" />
       <text>{{ displayName }}</text>
-      <button aria-label="查看礼物" @click.stop="openWallet"><image src="/static/stickers/gift.png" mode="aspectFit" /></button>
     </view>
     <MyTagBar :tag="currentTag" @switch="openComposer" />
     <PinnedTagCard v-if="featuredTag" :tag="featuredTag" @action="openPinnedTag" @participate="bidOpen = true" />
@@ -79,9 +77,6 @@ onShow(load)
 .discover-profile { position:absolute; z-index:6; top:22px; right:14px; display:flex; width:48px; min-height:68px; align-items:center; padding:5px 3px 4px; flex-direction:column; border:2px solid rgba(103,169,151,.45); border-radius:20px 20px 16px 16px; background:#d8f0e6; box-shadow:0 3px 10px rgba(32,88,79,.12); transform:rotate(3deg); }
 .discover-profile > .avatar-image { width:31px; height:31px; border:2px solid #fff; border-radius:50%; }
 .discover-profile > text { max-width:42px; margin-top:2px; overflow:hidden; color:#20584f; font-size:9px; font-weight:700; line-height:1.1; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
-.discover-profile button { position:absolute; top:9px; right:-11px; display:grid; width:23px; height:23px; padding:2px; place-items:center; border:1px solid #e5b83d; border-radius:50%; background:#fff2b6; }
-.discover-profile button::after { border:0; }
-.discover-profile button image { width:17px; height:17px; }
 .discover-exposure-empty { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; padding:16px; border-radius:16px; background:#fff4ce; color:var(--tago-ink); font-size:14px; }
 .discover-exposure-empty button { flex:none; margin:0; padding:0 14px; border-radius:999px; background:var(--tago-primary); color:white; font-size:14px; }
 .discover-section { position:relative; }

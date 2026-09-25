@@ -1,6 +1,6 @@
 import { computed, reactive, readonly, shallowRef } from 'vue'
 import { getProfile, updateProfile } from '@/api/account'
-import { getSession, login, recoverLogin, register, requestPasswordResetCode, requestRegistrationCode, resetPassword } from '@/api/auth'
+import { getRegistrationAgreement, getSession, login, recoverLogin, register, requestPasswordResetCode, requestRegistrationCode, resetPassword } from '@/api/auth'
 import { ApiError } from '@/api/client'
 import { useUserStore } from '@/stores/user'
 
@@ -15,7 +15,26 @@ export function useAuthFlow(mode?: Mode) {
   const message = shallowRef('')
   const error = shallowRef('')
   const recoveryRequestId = shallowRef('')
+  const agreement = shallowRef<{ version: string; body: string } | null>(null)
+  const agreementAccepted = shallowRef(false)
+  const agreementLoading = shallowRef(false)
+  const loginRequired = shallowRef(false)
   let countdownTimer: ReturnType<typeof setInterval> | undefined
+
+  async function loadAgreement() {
+    if (agreementLoading.value) return
+    agreementAccepted.value = false
+    agreement.value = null
+    agreementLoading.value = true
+    error.value = ''
+    try {
+      const result = await getRegistrationAgreement()
+      if (!result.version || !result.body) throw new Error('注册协议不完整')
+      agreement.value = { version: result.version, body: result.body }
+    }
+    catch { error.value = '注册协议加载失败，请重试' }
+    finally { agreementLoading.value = false }
+  }
 
   const emailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
   const passwordValid = computed(() => Array.from(form.password).length >= 8)
@@ -45,6 +64,8 @@ export function useAuthFlow(mode?: Mode) {
     message.value = ''
     error.value = ''
     recoveryRequestId.value = ''
+    agreementAccepted.value = false
+    loginRequired.value = false
   }
 
   async function run<T>(task: () => Promise<T>) {
@@ -108,6 +129,10 @@ export function useAuthFlow(mode?: Mode) {
 
   async function verify() {
     if (!mode) return false
+    if (mode === 'register' && (!agreement.value || !agreementAccepted.value)) {
+      error.value = '请先加载并同意注册协议'
+      return false
+    }
     if (!challengeId.value) {
       error.value = '请先发送并获取邮箱验证码'
       return false
@@ -132,16 +157,29 @@ export function useAuthFlow(mode?: Mode) {
         return true
       }
 
-      const result = await register(payload)
-      if (!result.authenticated) return true
-      const session = await getSession()
-      userStore.setSession(session)
+      const result = await register({ ...payload, agreementVersion: agreement.value!.version, agreementAccepted: agreementAccepted.value })
+      userStore.clear()
+      loginRequired.value = !result.authenticated || result.nextAction === 'LOGIN'
+      if (loginRequired.value) return true
+      try {
+        const session = await getSession()
+        userStore.setSession(session)
+        loginRequired.value = !session.authenticated
+      }
+      catch { loginRequired.value = true }
+      if (loginRequired.value) return true
       if (form.nickname.trim()) {
         const profile = await getProfile()
         await updateProfile({ displayName: form.nickname.trim(), avatarId: profile.avatarId, expectedVersion: profile.version })
       }
       return true
-    }).catch(() => false)
+    }).catch(async (cause) => {
+      if (mode === 'register' && cause instanceof ApiError && cause.code === 'REGISTRATION_AGREEMENT_REQUIRED') {
+        await loadAgreement()
+        if (agreement.value) error.value = '注册协议已更新，请阅读并重新勾选同意'
+      }
+      return false
+    })
   }
 
   return {
@@ -152,6 +190,11 @@ export function useAuthFlow(mode?: Mode) {
     message: readonly(message),
     error: readonly(error),
     recoveryRequestId: readonly(recoveryRequestId),
+    agreement: readonly(agreement),
+    agreementAccepted,
+    agreementLoading: readonly(agreementLoading),
+    loginRequired: readonly(loginRequired),
+    loadAgreement,
     emailValid,
     passwordValid,
     passwordMatches,

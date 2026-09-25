@@ -32,6 +32,7 @@ scripts/
 vitest.config.ts
 *.test.*
 !src/composables/useApplicationsData.test.ts
+!src/composables/useAuthFlow.test.ts
 !src/api/adapters.test.ts
 !src/components/business/AvatarBadge.test.ts
 !vitest.config.ts

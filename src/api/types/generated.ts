@@ -5,6 +5,13 @@
 
 
 export interface paths {
+  "/api/v1/auth/registration-agreement": {
+    /**
+     * 读取注册协议草案
+     * @description 契约状态：FROZEN；实现状态：IMPLEMENTED_WITH_GAPS。 认证：需要 webSession Cookie。 已知限制：当前返回可替换的 mvp-mock-v1 协议，正式正文需产品替换。 验证：已完成本地规范与实例校验；真实 Dev 请求尚未核验
+     */
+    get: operations["identityRegistrationAgreement"];
+  };
   "/api/v1/account/password": {
     /**
      * 修改当前账号密码
@@ -528,6 +535,41 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    SingleResponseAgreementView: {
+      data: components["schemas"]["AgreementView"];
+      errCode?: string | null;
+      errMessage?: string | null;
+      success: boolean;
+    };
+    /** @description 注册邮箱验证码与协议接受请求参数 */
+    RegistrationInput: {
+      /** @description 是否明确接受注册协议 */
+      agreementAccepted: boolean;
+      /** @description 明确接受的注册协议版本 */
+      agreementVersion: string;
+      candidateToken?: string | null;
+      /**
+       * Format: uuid
+       * @description 验证码挑战 ID
+       */
+      challengeId: string;
+      /** @description 邮箱收到的验证码 */
+      code: string;
+      /**
+       * Format: email
+       * @description 邮箱地址；去首尾空白并规范化后长度为 6–254 个字符
+       */
+      email: string;
+      /**
+       * Format: password
+       * @description 新密码；业务有效长度为 8–128 个 Unicode 码点
+       */
+      password: string;
+    };
+    AgreementView: {
+      body?: string;
+      version?: string;
+    };
     /** @description 申请接受后的连接结果 */
     AcceptanceView: {
       /** Format: uuid */
@@ -1093,6 +1135,7 @@ export interface components {
     RegistrationView: {
       /** @description 注册后是否已建立网页会话 */
       authenticated: boolean;
+      displayName?: string | null;
       /**
        * @description 客户端下一步动作
        * @enum {string}
@@ -1513,6 +1556,26 @@ export type $defs = Record<string, never>;
 export type external = Record<string, never>;
 
 export interface operations {
+  /**
+   * 读取注册协议草案
+   * @description 契约状态：FROZEN；实现状态：IMPLEMENTED_WITH_GAPS。 认证：需要 webSession Cookie。 已知限制：当前返回可替换的 mvp-mock-v1 协议，正式正文需产品替换。 验证：已完成本地规范与实例校验；真实 Dev 请求尚未核验
+   */
+  identityRegistrationAgreement: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SingleResponseAgreementView"];
+        };
+      };
+      /** @description 未登录或会话已失效 */
+      401: {
+        content: {
+          "application/json": components["schemas"]["Response"];
+        };
+      };
+    };
+  };
 
   /**
    * 修改当前账号密码
@@ -2440,7 +2503,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["VerificationInput"];
+        "application/json": components["schemas"]["RegistrationInput"];
       };
     };
     responses: {

@@ -20,7 +20,7 @@ function openRow(row: SettingsRow) {
   if (row.id === 'profile' || row.id === 'avatars' || row.id === 'session') uni.navigateTo({ url: '/pages/account/index' })
   else if (row.id === 'tag') uni.navigateTo({ url: '/pages/tag/compose' })
   else if (row.id === 'applications') uni.navigateTo({ url: '/pages/applications/index' })
-  else if (row.id === 'wallet' || row.id === 'ledger') uni.navigateTo({ url: '/pages/gift/timeline' })
+  else if (row.id === 'wallet' || row.id === 'ledger') uni.navigateTo({ url: '/pages/wallet/index' })
   else if (row.id === 'exposure' || row.id === 'bids' || row.id === 'rules') uni.navigateTo({ url: '/pages/exposure/index' })
   else if (row.id === 'chats' || row.id === 'encounters') uni.navigateTo({ url: '/pages/meet/index' })
   else if (row.id === 'policy') focus.value = 'policy'

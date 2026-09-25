@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
+import WdPopup from 'wot-design-uni/components/wd-popup/wd-popup.vue'
 import AuthEntryField from './AuthEntryField.vue'
 import AuthStage from './AuthStage.vue'
 import { useAuthFlow } from '@/composables/useAuthFlow'
@@ -20,7 +21,12 @@ const subtitle = computed(() => activeMode.value === 'login' ? '继续更多有�
 const loginFlow = useAuthFlow()
 const registerFlow = useAuthFlow('register')
 
-const agreed = shallowRef(false)
+const agreed = registerFlow.agreementAccepted
+const agreementOpen = shallowRef(false)
+watch(activeMode, (mode) => {
+  agreementOpen.value = false
+  if (mode === 'register') void registerFlow.loadAgreement()
+}, { immediate: true })
 const shaking = shallowRef(false)
 const hint = shallowRef('')
 const mismatch = computed(() => !!registerFlow.form.confirmPassword && !registerFlow.passwordMatches.value)
@@ -61,11 +67,19 @@ function bounceAgreement() {
 
 async function submitRegister() {
   if (!agreed.value) {
-    hint.value = '请先勾选同意《用户协议》和《隐私政策》'
+    hint.value = '请先勾选同意《注册协议》'
     bounceAgreement()
     return
   }
-  if (await registerFlow.verify()) uni.reLaunch({ url: '/pages/discover/index' })
+  if (!await registerFlow.verify()) return
+  if (registerFlow.loginRequired.value) {
+    const email = registerFlow.form.email
+    selectMode('login')
+    loginFlow.form.email = email
+    uni.showToast({ title: '注册成功，请登录', icon: 'none' })
+    return
+  }
+  uni.reLaunch({ url: props.redirect })
 }
 </script>
 
@@ -94,16 +108,28 @@ async function submitRegister() {
         <AuthEntryField v-model="registerFlow.form.confirmPassword" icon="lock" type="password" placeholder="确认密码" />
       </view>
 
-      <button class="auth-form__agreement" :class="{ 'auth-form__agreement--shaking': shaking }" type="button" hover-class="text-link--pressed" @click="toggleAgree">
+      <button class="auth-form__agreement" :class="{ 'auth-form__agreement--shaking': shaking }" :disabled="!registerFlow.agreement.value || registerFlow.submitting.value" :aria-pressed="agreed" type="button" hover-class="text-link--pressed" @click="toggleAgree">
         <view class="auth-form__check" :class="{ 'auth-form__check--active': agreed }"><text v-if="agreed">✓</text></view>
-        <text>我已阅读并同意</text><text class="auth-form__policy">《用户协议》</text><text>和</text><text class="auth-form__policy">《隐私政策》</text>
+        <text>我已阅读并同意《注册协议》</text>
+      </button>
+
+      <button class="auth-form__agreement-link" type="button" :disabled="registerFlow.agreementLoading.value || registerFlow.submitting.value" :aria-expanded="agreementOpen" @click="registerFlow.agreement.value ? agreementOpen = !agreementOpen : registerFlow.loadAgreement()">
+        {{ registerFlow.agreementLoading.value ? '协议加载中…' : !registerFlow.agreement.value ? '重试加载协议' : agreementOpen ? '收起注册协议' : '查看注册协议' }}
       </button>
 
       <text v-if="registerNotice" class="auth-form__message auth-form__message--register" :class="{ 'auth-form__message--error': registerFailed || hint || mismatch }">{{ registerNotice }}</text>
-      <button class="auth-form__submit auth-form__submit--register" :loading="registerFlow.submitting.value" :disabled="registerFlow.submitting.value" form-type="submit" hover-class="auth-form__submit--pressed">{{ registerFlow.submitting.value ? '注册中' : '注册并继续' }}</button>
+      <button class="auth-form__submit auth-form__submit--register" :loading="registerFlow.submitting.value" :disabled="registerFlow.submitting.value || !registerFlow.agreement.value || registerFlow.agreementLoading.value" form-type="submit" hover-class="auth-form__submit--pressed">{{ registerFlow.submitting.value ? '注册中' : '注册并继续' }}</button>
       <view class="auth-form__switch auth-form__switch--register"><text>已有账号？</text><button type="button" hover-class="text-link--pressed" @click="selectMode('login')">直接登录</button></view>
     </form>
   </AuthStage>
+  <WdPopup v-model="agreementOpen" position="bottom" safe-area-inset-bottom>
+    <view role="dialog" aria-modal="true" aria-label="注册协议" @keydown.esc="agreementOpen = false">
+      <button type="button" class="auth-form__agreement-link" @click="agreementOpen = false">关闭注册协议</button>
+      <scroll-view scroll-y class="auth-form__agreement-body">
+        <text selectable>{{ registerFlow.agreement.value?.body }}</text>
+      </scroll-view>
+    </view>
+  </WdPopup>
 </template>
 
 <style scoped lang="scss">
@@ -135,7 +161,9 @@ async function submitRegister() {
 .auth-form__agreement { display: flex; width: 100%; min-height: 60rpx; align-items: center; justify-content: center; margin: 10rpx 0 0; padding: 0; color: #0b4f57; border: 0; background: transparent; font-family: inherit; font-size: 21rpx; font-weight: 700; line-height: 1.25; white-space: nowrap; }
 .auth-form__check { display: flex; width: 44rpx; height: 44rpx; flex: 0 0 44rpx; align-items: center; justify-content: center; margin-right: 10rpx; color: #fff; border: 3rpx solid #146258; border-radius: 50%; font-size: 30rpx; font-weight: 900; line-height: 1; }
 .auth-form__check--active { background: #146258; }
-.auth-form__policy { color: #086ad8; }
+.auth-form__agreement-link { margin: 0 auto 8rpx; padding: 0 12rpx; color: #086ad8; background: transparent; font-size: 22rpx; line-height: 48rpx; }
+.auth-form__agreement-link::after { border: 0; }
+.auth-form__agreement-body { height: 60vh; margin-bottom: 16rpx; padding: 16rpx; box-sizing: border-box; background: #fffdf7; border-radius: 12rpx; font-size: 24rpx; line-height: 1.6; white-space: pre-wrap; }
 .auth-form__agreement--shaking { animation: agree-shake .32s ease; }
 
 @keyframes agree-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10rpx); } 75% { transform: translateX(10rpx); } }

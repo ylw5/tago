@@ -5,7 +5,7 @@ import { getWalletBalance } from '@/api/wallet'
 import { useUserStore } from '@/stores/user'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 
-type MenuId = 'profile' | 'wallet' | 'gift' | 'settings'
+type MenuId = 'profile' | 'wallet' | 'settings'
 
 interface Props {
   visible: boolean
@@ -22,7 +22,6 @@ const emit = defineEmits<{ close: [] }>()
 const menus: { id: MenuId; title: string; url: string }[] = [
   { id: 'profile', title: '我的资料', url: '/pages/account/profile' },
   { id: 'wallet', title: '我的钱包', url: '/pages/wallet/index' },
-  { id: 'gift', title: '我的礼物', url: '/pages/gift/timeline?filter=income' },
   { id: 'settings', title: '账号设置', url: '/pages/account/index' },
 ]
 
@@ -75,7 +74,6 @@ function signOut() {
           <view class="drawer__badge-hole" />
           <AvatarImage class="drawer__badge-avatar" :id="avatarId" />
           <text class="drawer__badge-name">{{ displayName }}</text>
-          <image class="drawer__badge-gift" src="/static/stickers/gift.png" mode="aspectFit" />
         </view>
       </view>
 
@@ -149,7 +147,6 @@ $ink: #20584f;
 .drawer__badge-hole::after { content:''; position:absolute; top:1px; left:2px; width:30px; height:3px; border-radius:2px; background:#f08a4b; transform:rotate(-58deg); transform-origin:left center; }
 .drawer__badge-avatar { width:54px; height:54px; border:3px solid #fff; border-radius:50%; background:#fff; }
 .drawer__badge-name { max-width:84px; margin-top:6px; padding:2px 8px; overflow:hidden; border-radius:8px; background:rgba(255,255,255,.85); color:$ink; font-size:13px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
-.drawer__badge-gift { position:absolute; top:26px; right:-16px; width:30px; height:30px; padding:3px; border:1px solid #e5b83d; border-radius:50%; background:#fff2b6; transform:rotate(-6deg); }
 
 .drawer__coin {
   display:flex; align-items:center; gap:12px; margin:8px 0 18px; padding:12px 16px;

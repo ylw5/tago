@@ -64,7 +64,6 @@ function showEarnRule() {
 function recharge() {
   uni.showToast({ title: '充值通道即将开放', icon: 'none' })
 }
-function openHistory() { uni.navigateTo({ url: '/pages/gift/timeline' }) }
 
 onShow(load)
 </script>
@@ -142,7 +141,6 @@ onShow(load)
       <view class="records">
         <view class="records__head">
           <text class="records__title">星币记录</text>
-          <text v-if="entries.length" class="records__more" @click="openHistory">查看全部</text>
         </view>
         <view class="records__list">
           <view v-for="entry in entries" :key="entry.sequence" class="record">
@@ -219,7 +217,6 @@ $card: rgba(252,248,236,.95);
 .records { margin-top:16px; }
 .records__head { display:flex; align-items:center; justify-content:space-between; padding:0 4px 8px; }
 .records__title { color:$navy; font-size:20px; font-weight:900; letter-spacing:1px; }
-.records__more { color:$ink; font-size:12px; }
 .records__list { padding:4px 14px; border-radius:10px 14px 10px 12px; background:$card; box-shadow:0 2px 10px rgba(80,70,40,.07); }
 .record { display:flex; min-height:46px; align-items:center; gap:10px; border-bottom:1px solid rgba(31,59,92,.07); }
 .record:last-child { border-bottom:0; }
