@@ -36,7 +36,6 @@ vitest.config.ts
 !src/api/adapters.test.ts
 !src/components/business/AvatarBadge.test.ts
 !vitest.config.ts
-src/mocks/
 .agents/
 
 # Editor directories and files
