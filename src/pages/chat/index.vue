@@ -58,7 +58,7 @@ onLoad(q=>{
         <button class="chat-header__more" aria-label="更多" @click="openMore"><i /><i /><i /></button>
       </view>
 
-      <AsyncState :loading="loading || (!error && messages.length>0 && !initialScrollReady)" :error="error" :empty="!conversationId" empty-title="没有找到会话" @retry="load(conversationId)">
+      <AsyncState :loading="loading || (!error && messages.length>0 && !initialScrollReady)" :error="error" :empty="!conversationId" empty-title="没有找到会话" empty-description="返回聊天列表，重新选择想联系的人。" @retry="load(conversationId)">
         <view v-if="!connected" class="connection"><i />{{ connecting?'正在连接聊天服务':'聊天服务未连接' }}</view>
         <scroll-view scroll-y class="messages" :scroll-top="messageScrollTop">
           <view v-if="relationTag" class="encounter-card">
@@ -84,7 +84,7 @@ onLoad(q=>{
               </view>
             </view>
           </view>
-          <view v-else-if="connected" class="chat-empty"><b>连接成功</b><text>还没有消息，从一句真诚的问候开始吧。</text></view>
+          <view v-else-if="connected" class="chat-empty"><b>还没有消息</b><text>从一句真诚的问候开始吧。</text></view>
         </scroll-view>
       </AsyncState>
 

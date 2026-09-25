@@ -25,6 +25,7 @@ onShow(load)
   <view class="tago-page applications-page">
     <AppHeader variant="home" back title="有人想认识你" subtitle="看看哪些连接，正准备向你走来" slogan="每一次新的相遇\n都是生活送来的礼物" @back="goBack" />
     <AsyncState :loading="loading" :error="error" :empty="!applications.length" empty-title="暂时没有新申请" empty-description="有人认真回应你的 Tag 后，会出现在这里。" @retry="load">
+      <template #empty-icon><image class="applications-empty-icon" src="/static/illustrations/recognition-envelope.png" mode="aspectFit" aria-hidden="true" /></template>
       <view class="applications-summary">
         <view class="applications-summary__tape applications-summary__tape--tl" aria-hidden="true" />
         <view class="applications-summary__tape applications-summary__tape--br" aria-hidden="true" />
@@ -46,6 +47,7 @@ onShow(load)
 
 <style scoped lang="scss">
 .applications-page { display:flex; min-height:100dvh; flex-direction:column; overflow-x:hidden; }
+.applications-empty-icon { width:112rpx; height:112rpx; flex:none; margin-bottom:24rpx; }
 .applications-list { display:flex; flex-direction:column; }
 .applications-list :deep(.application:last-child) { margin-bottom:0; }
 

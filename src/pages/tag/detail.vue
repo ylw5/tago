@@ -64,7 +64,7 @@ onLoad(query => {
       <image class="detail-head__cat" src="/static/illustrations/drawer-cat.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <AsyncState :loading="loading" :error="error" :empty="!tag" empty-title="没有找到这个 Tag" @retry="tag && load(tag.id)">
+    <AsyncState :loading="loading" :error="error" :empty="!tag" empty-title="没有找到这个 Tag" empty-description="返回发现页，看看其他感兴趣的 Tag。" @retry="tag && load(tag.id)">
       <template v-if="tag">
         <view class="owner">
           <AvatarImage class="owner__avatar" :id="tag.ownerIdentity.avatarId" />

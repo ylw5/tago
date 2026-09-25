@@ -42,7 +42,7 @@ onLoad(q=>{const id=typeof q?.id==='string'?q.id:'';if(id)load(id);else{loading.
       <text>从一个共同的兴趣开始</text>
       <text class="compare-slogan__smile">◡̈</text>
     </view>
-    <AsyncState :loading="loading" :error="error" :empty="!application" @retry="application && load(application.id)">
+    <AsyncState :loading="loading" :error="error" :empty="!application" empty-title="没有找到这条认识申请" empty-description="返回申请列表，查看其他认识申请。" @retry="application && load(application.id)">
       <section v-if="application" class="tag-card">
         <view class="tag-card__profile">
           <view class="tag-card__avatar">

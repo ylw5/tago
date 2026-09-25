@@ -47,7 +47,7 @@ onLoad((query) => {
 
     <PaperTitleHeader title="选择头像" subtitle="挑一个喜欢的头像，让大家认识你" @back="goBack" />
 
-    <AsyncState :loading="loading" :error="error" :empty="!avatars.length" empty-title="暂时没有可选头像" @retry="load">
+    <AsyncState :loading="loading" :error="error" :empty="!avatars.length" empty-title="暂时没有可选头像" empty-description="可以先返回，稍后再来挑选头像。" @retry="load">
       <view class="avatar-grid">
         <view
           v-for="(avatar, index) in avatars"

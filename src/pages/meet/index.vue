@@ -45,6 +45,14 @@ onShow(() => { void loadApplications(); void loadChats() })
       <view class="conversation-heading__note"><text>好的相遇</text><text>会让平凡的日子发光 ♡</text></view>
     </view>
     <AsyncState :loading="chatsLoading" :error="chatsError" :empty="!conversations.length" empty-title="还没有遇见的人" empty-description="当认识申请被接受后，你们的会话会出现在这里。" @retry="loadChats">
+      <template #empty-icon>
+        <svg class="empty-chat-icon" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+          <circle cx="48" cy="48" r="46" fill="var(--tago-primary-weak)" />
+          <path d="M48 42h19a9 9 0 0 1 9 9v11a9 9 0 0 1-9 9h-1v9l-12-9h-6a9 9 0 0 1-9-9V51a9 9 0 0 1 9-9Z" fill="var(--tago-paper)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M28 22h29a10 10 0 0 1 10 10v17a10 10 0 0 1-10 10H43L29 69V59h-1a10 10 0 0 1-10-10V32a10 10 0 0 1 10-10Z" fill="var(--tago-paper)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+          <g fill="currentColor"><circle cx="32" cy="41" r="2.5" /><circle cx="43" cy="41" r="2.5" /><circle cx="54" cy="41" r="2.5" /></g>
+        </svg>
+      </template>
       <view class="conversation-list">
         <ConversationRow v-for="(conversation, index) in recentConversations" :key="conversation.id" :conversation="conversation" :index="index" @select="openChat" />
         <template v-if="showStale">
@@ -61,6 +69,7 @@ onShow(() => { void loadApplications(); void loadChats() })
 
 <style scoped lang="scss">
 .meet-page { display:flex; min-height:100dvh; flex-direction:column; overflow-x:hidden; }
+.empty-chat-icon { width:112rpx; height:112rpx; flex:none; margin-bottom:24rpx; color:var(--tago-primary); }
 .application-entry { position:relative; display:flex; align-items:center; width:100%; min-height:106rpx; margin:10rpx 0 18rpx; padding:14rpx 22rpx 14rpx 24rpx; overflow:visible; color:var(--tago-ink); text-align:left; border:0; border-radius:6rpx; background:linear-gradient(100deg,#fcf0c6,#f9ecc4 60%,#f7e8bd); box-shadow:0 6rpx 16rpx rgba(120,98,40,.12); line-height:1.3; }
 .application-entry::after { border:0; }
 .application-entry__tape { position:absolute; width:40rpx; height:16rpx; background:rgba(236,205,120,.55); pointer-events:none; }
