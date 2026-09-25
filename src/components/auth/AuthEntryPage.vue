@@ -60,6 +60,11 @@ function toggleAgree() {
   hint.value = ''
 }
 
+async function openAgreement() {
+  if (!registerFlow.agreement.value) await registerFlow.loadAgreement()
+  if (registerFlow.agreement.value) agreementOpen.value = true
+}
+
 function bounceAgreement() {
   shaking.value = false
   setTimeout(() => { shaking.value = true }, 20)
@@ -108,14 +113,13 @@ async function submitRegister() {
         <AuthEntryField v-model="registerFlow.form.confirmPassword" icon="lock" type="password" placeholder="确认密码" />
       </view>
 
-      <button class="auth-form__agreement" :class="{ 'auth-form__agreement--shaking': shaking }" :disabled="!registerFlow.agreement.value || registerFlow.submitting.value" :aria-pressed="agreed" type="button" hover-class="text-link--pressed" @click="toggleAgree">
-        <view class="auth-form__check" :class="{ 'auth-form__check--active': agreed }"><text v-if="agreed">✓</text></view>
-        <text>我已阅读并同意《注册协议》</text>
-      </button>
-
-      <button class="auth-form__agreement-link" type="button" :disabled="registerFlow.agreementLoading.value || registerFlow.submitting.value" :aria-expanded="agreementOpen" @click="registerFlow.agreement.value ? agreementOpen = !agreementOpen : registerFlow.loadAgreement()">
-        {{ registerFlow.agreementLoading.value ? '协议加载中…' : !registerFlow.agreement.value ? '重试加载协议' : agreementOpen ? '收起注册协议' : '查看注册协议' }}
-      </button>
+      <view class="auth-form__agreement" :class="{ 'auth-form__agreement--shaking': shaking }">
+        <button class="auth-form__agreement-toggle" :disabled="!registerFlow.agreement.value || registerFlow.submitting.value" :aria-pressed="agreed" type="button" hover-class="text-link--pressed" @click="toggleAgree">
+          <view class="auth-form__check" :class="{ 'auth-form__check--active': agreed }"><text v-if="agreed">✓</text></view>
+          <text>我已阅读并同意</text>
+        </button>
+        <button class="auth-form__agreement-link" type="button" hover-class="text-link--pressed" :disabled="registerFlow.agreementLoading.value || registerFlow.submitting.value" @click="openAgreement">《注册协议》</button>
+      </view>
 
       <text v-if="registerNotice" class="auth-form__message auth-form__message--register" :class="{ 'auth-form__message--error': registerFailed || hint || mismatch }">{{ registerNotice }}</text>
       <button class="auth-form__submit auth-form__submit--register" :loading="registerFlow.submitting.value" :disabled="registerFlow.submitting.value || !registerFlow.agreement.value || registerFlow.agreementLoading.value" form-type="submit" hover-class="auth-form__submit--pressed">{{ registerFlow.submitting.value ? '注册中' : '注册并继续' }}</button>
@@ -124,7 +128,7 @@ async function submitRegister() {
   </AuthStage>
   <WdPopup v-model="agreementOpen" position="bottom" safe-area-inset-bottom>
     <view role="dialog" aria-modal="true" aria-label="注册协议" @keydown.esc="agreementOpen = false">
-      <button type="button" class="auth-form__agreement-link" @click="agreementOpen = false">关闭注册协议</button>
+      <button type="button" class="auth-form__agreement-close" @click="agreementOpen = false">关闭注册协议</button>
       <scroll-view scroll-y class="auth-form__agreement-body">
         <text selectable>{{ registerFlow.agreement.value?.body }}</text>
       </scroll-view>
@@ -140,7 +144,7 @@ async function submitRegister() {
 .text-link--pressed { opacity: .58; }
 
 .auth-form__forgot { display: block; width: max-content; height: 54rpx; margin: 8rpx 0 18rpx auto; padding: 0 10rpx; color: #1760a0; border: 0; background: transparent; font-family: inherit; font-size: 25rpx; font-weight: 700; line-height: 54rpx; }
-.auth-form__forgot::after, .auth-form__switch button::after, .auth-form__agreement::after { border: 0; }
+.auth-form__forgot::after, .auth-form__switch button::after, .auth-form__agreement-toggle::after, .auth-form__agreement-link::after, .auth-form__agreement-close::after { border: 0; }
 .auth-form__message { display: block; min-height: 34rpx; margin: -8rpx 10rpx 10rpx; font-size: 22rpx; line-height: 1.35; text-align: center; }
 .auth-form__message--register { min-height: 28rpx; margin: -2rpx 8rpx 2rpx; color: var(--tago-primary); font-size: 19rpx; line-height: 1.25; }
 .auth-form__message--error { color: var(--tago-danger); }
@@ -158,11 +162,12 @@ async function submitRegister() {
 .auth-form__switch--register { margin-top: 8rpx; font-size: 23rpx; }
 .auth-form__switch button { height: 58rpx; margin: 0; padding: 0 8rpx; color: #086ad8; border: 0; background: transparent; font-family: inherit; font-size: inherit; font-weight: 800; line-height: 58rpx; }
 
-.auth-form__agreement { display: flex; width: 100%; min-height: 60rpx; align-items: center; justify-content: center; margin: 10rpx 0 0; padding: 0; color: #0b4f57; border: 0; background: transparent; font-family: inherit; font-size: 21rpx; font-weight: 700; line-height: 1.25; white-space: nowrap; }
+.auth-form__agreement { display: flex; width: 100%; min-height: 60rpx; align-items: center; justify-content: center; margin: 10rpx 0 8rpx; color: #0b4f57; font-size: 21rpx; font-weight: 700; line-height: 1.25; white-space: nowrap; }
+.auth-form__agreement-toggle { display: flex; width: auto; align-items: center; margin: 0; padding: 0; color: inherit; border: 0; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; }
 .auth-form__check { display: flex; width: 44rpx; height: 44rpx; flex: 0 0 44rpx; align-items: center; justify-content: center; margin-right: 10rpx; color: #fff; border: 3rpx solid #146258; border-radius: 50%; font-size: 30rpx; font-weight: 900; line-height: 1; }
 .auth-form__check--active { background: #146258; }
-.auth-form__agreement-link { margin: 0 auto 8rpx; padding: 0 12rpx; color: #086ad8; background: transparent; font-size: 22rpx; line-height: 48rpx; }
-.auth-form__agreement-link::after { border: 0; }
+.auth-form__agreement-link { width: auto; margin: 0; padding: 0; color: #086ad8; border: 0; background: transparent; font-family: inherit; font-size: inherit; font-weight: 800; line-height: inherit; text-decoration: underline; text-underline-offset: 4rpx; }
+.auth-form__agreement-close { display: block; margin: 0 auto; padding: 0 12rpx; color: #086ad8; background: transparent; font-size: 22rpx; line-height: 48rpx; }
 .auth-form__agreement-body { height: 60vh; margin-bottom: 16rpx; padding: 16rpx; box-sizing: border-box; background: #fffdf7; border-radius: 12rpx; font-size: 24rpx; line-height: 1.6; white-space: pre-wrap; }
 .auth-form__agreement--shaking { animation: agree-shake .32s ease; }
 
