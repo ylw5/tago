@@ -60,7 +60,7 @@ onShow(load)
     <view class="discover-section discover-section--recommend">
       <view class="discover-section__head">
         <text class="discover-section__title">也许你会想认识这些Tag</text>
-        <button class="discover-section__refresh" :class="{ 'is-spinning': refreshing }" :disabled="loading || refreshing" @click="refresh"><i />换一批</button>
+        <button class="discover-section__refresh" :class="{ 'is-spinning': refreshing }" :disabled="loading || refreshing" @click="refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 0 0-8 8a8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" /></svg>换一批</button>
       </view>
       <AsyncState :loading="loading" :error="error" :empty="!tags.length" empty-title="暂时没有推荐" empty-description="稍后刷新，看看有没有新的同频 Tag。" @retry="load">
         <view class="discover-list" :class="{ 'discover-list--loading': loading || refreshing }"><TagCard v-for="tag in tags" :key="tag.id" :tag="tag" @action="openTag" /></view>
@@ -90,9 +90,8 @@ onShow(load)
 .discover-section__pager button::after,.discover-section__refresh::after { border:0; }
 .discover-section__pager button[disabled] { opacity:.35; }
 .discover-section__refresh { display:flex; align-items:center; gap:8rpx; height:56rpx; margin:0; padding:0 22rpx; color:var(--tago-primary); border:0; border-radius:999rpx; background:rgba(255,255,255,.82); box-shadow:0 2rpx 8rpx rgba(33,68,55,.08); font-size:22rpx; font-weight:700; line-height:56rpx; }
-.discover-section__refresh i { position:relative; display:block; width:20rpx; height:20rpx; border:3rpx solid currentColor; border-right-color:transparent; border-radius:50%; }
-.discover-section__refresh i::after { content:''; position:absolute; top:-5rpx; right:-3rpx; border:5rpx solid transparent; border-left-color:currentColor; transform:rotate(-40deg); }
-.discover-section__refresh.is-spinning i { animation:discover-spin .8s linear infinite; }
+.discover-section__refresh svg { display:block; width:24rpx; height:24rpx; flex:none; }
+.discover-section__refresh.is-spinning svg { animation:discover-spin .8s linear infinite; }
 .discover-section__refresh[disabled] { opacity:.7; }
 @keyframes discover-spin { to { transform:rotate(360deg); } }
 .discover-list { display:flex; flex-direction:column; transition:opacity .2s ease; }
@@ -108,7 +107,6 @@ onShow(load)
   .discover-section__pager { gap:2px; height:24px; padding:0 3px; font-size:11px; }
   .discover-section__pager button { width:20px; height:20px; font-size:17px; line-height:18px; }
   .discover-section__refresh { gap:4px; height:28px; padding:0 11px; font-size:12px; line-height:28px; }
-  .discover-section__refresh i { width:10px; height:10px; border-width:1.5px; }
-  .discover-section__refresh i::after { top:-3px; right:-2px; border-width:3px; }
+  .discover-section__refresh svg { width:12px; height:12px; }
 }
 </style>
