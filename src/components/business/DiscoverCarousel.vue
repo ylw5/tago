@@ -105,11 +105,12 @@ function tagLabel(tag: { title: string }) { return tag.title.replace(/^#\s*/, ''
 <style scoped lang="scss">
 .carousel { position:relative; margin:0 -28rpx; }
 .carousel__track { display:flex; width:100%; padding:6rpx 0 4rpx; white-space:nowrap; }
-.carousel__card { position:relative; display:inline-grid; grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:14rpx; width:calc(68% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:#fff4d7; box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); vertical-align:top; white-space:normal; }
+.carousel__card { position:relative; display:inline-grid; grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:14rpx; width:calc(68% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:rgba(255,244,215,.72); box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); vertical-align:top; white-space:normal; }
 .carousel__card:first-child { margin-left:28rpx; }
 .carousel__card:last-child { margin-right:28rpx; }
-.carousel__card--blue { background:#e4f2fb; }
-.carousel__card--green { background:#e7f3df; }
+.carousel__card--blue { background:rgba(228,242,251,.72); }
+.carousel__card--green { background:rgba(231,243,223,.72); }
+.carousel__card--pink { background:rgba(253,232,236,.72); }
 .carousel__card:nth-child(odd) { transform:rotate(-.5deg); }
 .carousel__card:nth-child(even) { transform:rotate(.6deg); }
 .carousel__identity { display:flex; width:88rpx; flex-direction:column; align-items:center; gap:6rpx; }

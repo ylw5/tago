@@ -39,10 +39,11 @@ onShow(load)
       subtitle="看看此刻有人留下了什么"
       slogan="每一次相遇\n都可能让生活更有趣"
     />
-    <view class="discover-profile" @click="drawerOpen = true">
+    <button class="discover-profile" :aria-label="`${displayName}，打开个人菜单`" @click="drawerOpen = true">
+      <image class="discover-profile__charm" src="/static/illustrations/profile-charm.webp" mode="aspectFit" aria-hidden="true" />
       <AvatarImage :id="avatarId" />
       <text>{{ displayName }}</text>
-    </view>
+    </button>
     <MyTagBar :tag="currentTag" @switch="openComposer" />
     <PinnedTagCard v-if="featuredTag" :tag="featuredTag" @action="openPinnedTag" @participate="bidOpen = true" />
     <view v-if="!loading && (exposureError || !featuredTag)" class="discover-exposure-empty">
@@ -78,9 +79,13 @@ onShow(load)
 
 <style scoped lang="scss">
 .discover-page { display:flex; min-height:100dvh; flex-direction:column; overflow-x:hidden; }
-.discover-profile { position:absolute; z-index:6; top:22px; right:14px; display:flex; width:48px; min-height:68px; align-items:center; padding:5px 3px 4px; flex-direction:column; border:2px solid rgba(103,169,151,.45); border-radius:20px 20px 16px 16px; background:#d8f0e6; box-shadow:0 3px 10px rgba(32,88,79,.12); transform:rotate(3deg); }
-.discover-profile > .avatar-image { width:31px; height:31px; border:2px solid #fff; border-radius:50%; }
-.discover-profile > text { max-width:42px; margin-top:2px; overflow:hidden; color:#20584f; font-size:9px; font-weight:700; line-height:1.1; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+.discover-page :deep(.header--home .header__cat-art) { transform:translateX(-24px); }
+.discover-profile { position:absolute; z-index:6; top:calc(2px + env(safe-area-inset-top)); right:0; width:80px; height:89px; margin:0; padding:0; overflow:visible; border:0; border-radius:0; background:transparent; line-height:1; transform:rotate(3deg); }
+.discover-profile::after { border:0; }
+.discover-profile:focus-visible { outline:2px solid #20584f; outline-offset:2px; }
+.discover-profile__charm { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.discover-profile > .avatar-image { position:absolute; top:30%; left:24%; width:39%; height:35%; }
+.discover-profile > text { position:absolute; top:74%; left:22%; display:block; width:43%; overflow:hidden; color:#20584f; font-size:9px; font-weight:900; line-height:13px; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
 .discover-exposure-empty { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; padding:16px; border-radius:16px; background:#fff4ce; color:var(--tago-ink); font-size:14px; }
 .discover-exposure-empty button { flex:none; margin:0; padding:0 14px; border-radius:999px; background:var(--tago-primary); color:white; font-size:14px; }
 .discover-section { position:relative; }
@@ -101,9 +106,11 @@ onShow(load)
 .discover-list { display:flex; flex-direction:column; transition:opacity .2s ease; }
 .discover-list :deep(.tag-card:last-child) { margin-bottom:0; }
 .discover-list--loading { opacity:.72; }
+@media (max-width:360px) {
+  .discover-profile { width:72px; height:80px; }
+}
 @media (max-width:430px) {
   .discover-section--recommend { margin-top:5px; }
-  .discover-profile { top:14px; right:10px; }
   .discover-section__head { margin:0 5px 4px; }
   .discover-section__title { font-size:18px; }
   .discover-section__title::after { width:5px; height:13px; margin-left:6px; box-shadow:7px 5px 0 -1px var(--tago-accent),11px 10px 0 -2px var(--tago-accent); }

@@ -10,7 +10,7 @@ type ApplicationDto = components['schemas']['ApplicationView']
 type ConversationDto = components['schemas']['ConversationView']
 
 const motifOptions = ['book', 'moon', 'gamepad', 'shoes', 'pan', 'camera']
-const motifByTone: Record<NoteTone, string> = { yellow: '🎮', blue: '🌙', green: '📖' }
+const motifByTone: Record<NoteTone, string> = { yellow: '🎮', blue: '🌙', green: '📖', pink: '🌸' }
 
 function pickMotif(seed: string | number) {
   const key = typeof seed === 'number' ? seed : Array.from(seed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0)

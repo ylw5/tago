@@ -17,6 +17,11 @@ const toneMeta: Record<NoteTone, { base: string[]; mid: string; shadow: string }
     mid: '#dcebd4',
     shadow: 'rgba(125,158,116,.14)',
   },
+  pink: {
+    base: ['#fff1f3', '#f8d5dc', '#fde8ec'],
+    mid: '#f7d4dc',
+    shadow: 'rgba(196,120,140,.14)',
+  },
 }
 </script>
 
@@ -46,13 +51,14 @@ const toneMeta: Record<NoteTone, { base: string[]; mid: string; shadow: string }
     <path
       class="paper-strip__body"
       :fill="`url(#strip-grad-${tone})`"
+      fill-opacity=".72"
       filter="url(#strip-rough)"
       d="M8 8 C70 3 127 11 185 7 C251 3 314 10 380 6 C455 2 521 12 594 7 C679 2 757 10 892 7 L896 47 C899 83 891 114 895 147 C801 153 732 144 652 150 C560 155 485 145 394 151 C304 155 229 144 149 151 C92 155 48 146 7 149 C4 112 11 84 6 53 Z"
     />
     <path
       class="paper-strip__grain"
       :fill="toneMeta[tone].mid"
-      fill-opacity=".35"
+      fill-opacity=".22"
       filter="url(#strip-grain)"
       d="M8 8 C70 3 127 11 185 7 C251 3 314 10 380 6 C455 2 521 12 594 7 C679 2 757 10 892 7 L896 47 C899 83 891 114 895 147 C801 153 732 144 652 150 C560 155 485 145 394 151 C304 155 229 144 149 151 C92 155 48 146 7 149 C4 112 11 84 6 53 Z"
     />

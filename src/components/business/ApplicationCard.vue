@@ -83,9 +83,10 @@ const metaLabel = computed(() => [person.value.city, props.application.timeLabel
   pointer-events:none;
 }
 
-.application--yellow { --tone-strong:#f3d77a; --tone-soft:rgba(250,232,170,.72); --tone-tape:rgba(240,210,120,.62); background:linear-gradient(150deg, #fff8e4 0%, #fdf0cc 100%); }
-.application--blue { --tone-strong:#f3d77a; --tone-soft:rgba(200,228,246,.82); --tone-tape:rgba(160,205,232,.66); background:linear-gradient(150deg, #eef8fe 0%, #dff0fb 100%); }
-.application--green { --tone-strong:#f3d77a; --tone-soft:rgba(214,236,200,.85); --tone-tape:rgba(180,214,160,.66); background:linear-gradient(150deg, #f3f9ee 0%, #e6f2df 100%); }
+.application--yellow { --tone-strong:#f3d77a; --tone-soft:rgba(250,232,170,.72); --tone-tape:rgba(240,210,120,.62); background:linear-gradient(150deg, rgba(255,248,228,.72) 0%, rgba(253,240,204,.72) 100%); }
+.application--blue { --tone-strong:#f3d77a; --tone-soft:rgba(200,228,246,.82); --tone-tape:rgba(160,205,232,.66); background:linear-gradient(150deg, rgba(238,248,254,.72) 0%, rgba(223,240,251,.72) 100%); }
+.application--green { --tone-strong:#f3d77a; --tone-soft:rgba(214,236,200,.85); --tone-tape:rgba(180,214,160,.66); background:linear-gradient(150deg, rgba(243,249,238,.72) 0%, rgba(230,242,223,.72) 100%); }
+.application--pink { --tone-strong:#f3d77a; --tone-soft:rgba(248,210,218,.82); --tone-tape:rgba(232,170,186,.66); background:linear-gradient(150deg, rgba(255,244,246,.72) 0%, rgba(248,220,227,.72) 100%); }
 
 .application__tape { position:absolute; z-index:2; width:54rpx; height:20rpx; background:var(--tone-tape); pointer-events:none; }
 .application__tape--tl { top:-6rpx; left:-14rpx; transform:rotate(-36deg); }

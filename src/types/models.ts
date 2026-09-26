@@ -1,4 +1,4 @@
-export type NoteTone = 'yellow' | 'blue' | 'green'
+export type NoteTone = 'yellow' | 'blue' | 'green' | 'pink'
 export type TagCta = 'APPLY' | 'DETAIL' | 'WAITING' | 'NONE'
 
 export interface UserSummary {

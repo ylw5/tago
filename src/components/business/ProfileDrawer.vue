@@ -95,9 +95,9 @@ function signOut() {
           <text class="drawer__smile">˘ ᴗ ˘</text>
         </view>
         <view class="drawer__badge" @click="go('/pages/account/profile')">
-          <view class="drawer__badge-hole" />
-          <AvatarImage class="drawer__badge-avatar" :id="avatarId" />
-          <text class="drawer__badge-name">{{ displayName }}</text>
+          <image class="drawer__badge-charm" src="/static/illustrations/profile-charm.webp" mode="aspectFit" aria-hidden="true" />
+          <AvatarImage :id="avatarId" />
+          <view class="drawer__badge-name"><text>{{ displayName }}</text></view>
         </view>
       </view>
 
@@ -158,19 +158,15 @@ $ink: #20584f;
 .drawer__close::after { border:0; }
 .drawer__close::before { content:''; position:absolute; inset:0; background:linear-gradient($ink,$ink) center / 22px 2px no-repeat, linear-gradient($ink,$ink) center / 2px 22px no-repeat; transform:rotate(45deg); }
 
-.drawer__top { position:relative; display:flex; min-height:128px; align-items:flex-start; justify-content:space-between; margin-top:10px; }
-.drawer__slogan { display:flex; margin-top:6px; flex-direction:column; color:#7a7f78; font-size:11px; line-height:1.5; white-space:pre-line; transform:rotate(-4deg); }
-.drawer__smile { margin:4px 0 0 44px; color:#8b918a; font-size:12px; }
+.drawer__top { position:relative; display:flex; align-items:center; justify-content:space-between; }
+.drawer__slogan { display:flex; flex-direction:column; color:#7a7f78; font-size:11px; line-height:1.5; white-space:pre-line; transform:rotate(-4deg); }
+.drawer__smile { margin:4px 0 0 28px; color:#8b918a; font-size:12px; }
 
-.drawer__badge {
-  position:relative; display:flex; width:96px; margin-right:18px; padding:22px 6px 8px; flex-direction:column; align-items:center;
-  border:2px solid rgba(103,169,151,.55); border-radius:26px 26px 16px 16px; background:#cfeadf;
-  box-shadow:0 4px 12px rgba(32,88,79,.14); transform:rotate(4deg);
-}
-.drawer__badge-hole { position:absolute; top:6px; width:12px; height:12px; border:3px solid #f2f2ec; border-radius:50%; background:#9bb8ad; }
-.drawer__badge-hole::after { content:''; position:absolute; top:1px; left:2px; width:30px; height:3px; border-radius:2px; background:#f08a4b; transform:rotate(-58deg); transform-origin:left center; }
-.drawer__badge-avatar { width:54px; height:54px; border:3px solid #fff; border-radius:50%; background:#fff; }
-.drawer__badge-name { max-width:84px; margin-top:6px; padding:2px 8px; overflow:hidden; border-radius:8px; background:rgba(255,255,255,.85); color:$ink; font-size:13px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.drawer__badge { position:relative; width:148px; height:164px; margin:0 18px 0 8px; flex:none; transform:rotate(2deg); }
+.drawer__badge-charm { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.drawer__badge > .avatar-image { position:absolute; top:30.8%; left:24.8%; width:37.5%; height:33.5%; }
+.drawer__badge-name { position:absolute; top:71.7%; left:23.5%; display:flex; width:41.5%; height:16.9%; align-items:center; justify-content:center; overflow:hidden; }
+.drawer__badge-name text { overflow:hidden; max-width:100%; color:$ink; font-size:17px; font-weight:900; line-height:1; text-overflow:ellipsis; white-space:nowrap; }
 
 .drawer__coin {
   display:flex; align-items:center; gap:12px; margin:8px 0 18px; padding:12px 16px;
