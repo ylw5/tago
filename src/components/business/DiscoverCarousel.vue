@@ -89,7 +89,9 @@ function tagLabel(tag: { title: string }) { return tag.title.replace(/^#\s*/, ''
           <text class="carousel__name">{{ tag.author.name }}</text>
         </view>
         <view class="carousel__body">
-          <text v-if="tagLabel(tag)" class="carousel__title"><text class="carousel__mark"><text class="carousel__hash">#</text>{{ tagLabel(tag) }}</text></text>
+          <view class="carousel__title">
+            <text v-if="tagLabel(tag)" class="carousel__title-text"><text class="carousel__mark"><text class="carousel__hash">#</text>{{ tagLabel(tag) }}</text></text>
+          </view>
           <text class="carousel__summary">{{ tag.summary }}</text>
           <view class="carousel__bottom">
             <view class="carousel__coin"><image class="carousel__coin-icon" src="/static/stickers/coin.png" mode="aspectFill" aria-hidden="true" />{{ tag.price ?? '—' }}</view>
@@ -104,8 +106,9 @@ function tagLabel(tag: { title: string }) { return tag.title.replace(/^#\s*/, ''
 
 <style scoped lang="scss">
 .carousel { position:relative; margin:0 -28rpx; }
-.carousel__track { display:flex; width:100%; padding:6rpx 0 4rpx; white-space:nowrap; }
-.carousel__card { position:relative; display:inline-grid; grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:14rpx; width:calc(68% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:rgba(255,244,215,.72); box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); vertical-align:top; white-space:normal; }
+.carousel__track { display:block; width:100%; padding:6rpx 0 4rpx; white-space:nowrap; }
+.carousel__track :deep(.uni-scroll-view-content) { display:flex; align-items:stretch; width:100%; height:auto; }
+.carousel__card { position:relative; display:grid; flex:0 0 calc(68% - 14rpx); grid-template-columns:auto minmax(0,1fr); align-items:stretch; align-self:stretch; column-gap:14rpx; width:calc(68% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:rgba(255,244,215,.72); box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); white-space:normal; }
 .carousel__card:first-child { margin-left:28rpx; }
 .carousel__card:last-child { margin-right:28rpx; }
 .carousel__card--blue { background:rgba(228,242,251,.72); }
@@ -116,11 +119,12 @@ function tagLabel(tag: { title: string }) { return tag.title.replace(/^#\s*/, ''
 .carousel__identity { display:flex; width:88rpx; flex-direction:column; align-items:center; gap:6rpx; }
 .carousel__name { max-width:100%; overflow:hidden; color:var(--tago-ink); font-size:20rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
 .carousel__body { display:flex; min-width:0; flex-direction:column; gap:6rpx; }
-.carousel__title { display:-webkit-box; overflow:hidden; color:#1d2622; font-size:30rpx; font-weight:800; line-height:1.3; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.carousel__title { display:flex; flex:1 1 auto; flex-direction:column; min-width:0; color:#1d2622; font-size:30rpx; font-weight:800; line-height:1.3; }
+.carousel__title-text { display:-webkit-box; overflow:hidden; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .carousel__mark { background:linear-gradient(transparent 55%,rgba(250,215,95,.7) 55%); -webkit-box-decoration-break:clone; box-decoration-break:clone; }
 .carousel__hash { margin-right:4rpx; color:var(--tago-primary); }
-.carousel__summary { display:block; overflow:hidden; color:#3a423e; font-size:24rpx; font-weight:600; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
-.carousel__bottom { display:flex; align-items:center; gap:9rpx; }
+.carousel__summary { display:block; flex:none; overflow:hidden; color:#3a423e; font-size:24rpx; font-weight:600; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
+.carousel__bottom { display:flex; flex:none; align-items:center; gap:9rpx; }
 .carousel__coin { display:flex; align-items:center; gap:4rpx; flex:none; max-width:calc(100% - 96rpx); overflow:hidden; color:#9a4327; font-size:24rpx; font-weight:800; }
 .carousel__coin-icon { display:block; width:32rpx; height:32rpx; flex:none; }
 .carousel__progress { flex:1; min-width:80rpx; height:12rpx; border-radius:999rpx; background:rgba(117,128,128,.16); }
