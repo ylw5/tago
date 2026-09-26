@@ -41,8 +41,8 @@ it('shares one login and uses SDK counts for initial, message, read and deletion
   const me = instances[0].me
   expect(subscribe).toHaveBeenCalledWith({what:'sub'})
   me.onMetaSub({name:'usrA', unread:3})
-  me.onContactUpdate('msg', {name:'usrA', unread:4})
-  me.onContactUpdate('msg', {name:'usrA', unread:4})
+  me.onContactUpdate('msg', {name:'usrA', unread:4, seq:4, latestMessage:()=>({seq:4})})
+  me.onContactUpdate('msg', {name:'usrA', unread:4, seq:4, latestMessage:()=>({seq:4})})
   expect(tinodeSession.unread.value.get('usrA')).toBe(4)
   me.onContactUpdate('read', {name:'usrA', unread:0})
   expect(tinodeSession.unread.value.get('usrA')).toBe(0)
