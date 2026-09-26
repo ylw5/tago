@@ -3,7 +3,35 @@ import { request } from './client'
 
 type S = components['schemas']
 
-export type AdminUserDto = S['View']
+export interface AdminUserDto {
+  userId: string
+  email: string
+  status: string
+  balance: string
+  reserved: string
+  available: string
+  spendable: string
+  recoveryOutstanding: boolean
+  governanceVersion: number
+}
+
+export interface AdminGiftTierDto {
+  code: string
+  displayName: string
+  price: number
+  enabled: boolean
+  sortOrder: number
+  configVersion: number
+}
+
+export interface AdminGiftTierInput {
+  displayName: string
+  price: number
+  enabled: boolean
+  sortOrder: number
+  expectedVersion: number
+}
+
 export type AdjustmentDto = S['AdjustmentView']
 export type AdjustmentBatchDto = S['BatchView']
 export type AdjustmentBatchItemDto = S['BatchItemView']
@@ -20,19 +48,23 @@ export function findAdminUser(email: string) {
   return request<AdminUserDto>({ path: '/v1/admin/users', query: { email } })
 }
 
-export function freezeUser(userId: string) {
-  return request<void>({
+export function freezeUser(userId: string, expectedGovernanceVersion: number, idempotencyKey?: string) {
+  return request<AdminUserDto>({
     path: `/v1/admin/users/${userId}/freeze`,
     method: 'POST',
     idempotent: true,
+    idempotencyKey,
+    query: { expectedGovernanceVersion },
   })
 }
 
-export function unfreezeUser(userId: string) {
-  return request<void>({
+export function unfreezeUser(userId: string, expectedGovernanceVersion: number, idempotencyKey?: string) {
+  return request<AdminUserDto>({
     path: `/v1/admin/users/${userId}/unfreeze`,
     method: 'POST',
     idempotent: true,
+    idempotencyKey,
+    query: { expectedGovernanceVersion },
   })
 }
 
@@ -77,5 +109,17 @@ export function retryAdjustmentBatch(batchId: string, body: S['RetryInput'], ide
     body,
     idempotent: true,
     idempotencyKey,
+  })
+}
+
+export function listAdminGiftTiers() {
+  return request<AdminGiftTierDto[]>({ path: '/v1/admin/gift-tiers' })
+}
+
+export function upsertAdminGiftTier(code: string, body: AdminGiftTierInput) {
+  return request<AdminGiftTierDto, AdminGiftTierInput>({
+    path: `/v1/admin/gift-tiers/${encodeURIComponent(code)}`,
+    method: 'PUT',
+    body,
   })
 }
