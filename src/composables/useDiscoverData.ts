@@ -108,9 +108,8 @@ export function useDiscoverData() {
   }
 
   async function refresh() {
-    if (loading.value || refreshing.value) return
+    if (loading.value || refreshing.value) return false
     refreshing.value = true
-    error.value = ''
     try {
       await ensureBackendSession()
       const [discovery, outgoing] = await Promise.all([refreshDiscovery(), listApplications({ direction: 'OUTGOING', state: 'PENDING', limit: 30 })])
@@ -118,8 +117,11 @@ export function useDiscoverData() {
       tags.value = discovery.items.filter(item => item.tagId !== featuredTag.value?.id).map((item, index) => withPending(recommendationToTag(item, index, discovery.generatedAt)))
       const list = tags.value
       void fillSummaries(list, detailLoader()).then(next => { if (tags.value === list) tags.value = next })
-    } catch (cause) { error.value = message(cause) }
-    finally {
+      error.value = ''
+      return true
+    } catch {
+      return false
+    } finally {
       refreshing.value = false
     }
   }

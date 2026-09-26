@@ -17,8 +17,8 @@ function stepCarousel(step: number) {
 
 function openComposer() { uni.navigateTo({ url: '/pages/tag/compose?edit=1' }) }
 async function refreshRecommendations() {
-  await refresh()
-  if (!error.value && !tags.value.length) uni.showToast({ title: '暂时没有新的推荐', icon: 'none' })
+  const refreshed = await refresh()
+  if (refreshed && !tags.value.length) uni.showToast({ title: '暂时没有新的推荐', icon: 'none' })
 }
 const drawerOpen = shallowRef(false)
 const bidOpen = shallowRef(false)
