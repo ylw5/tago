@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { request } from './client'
+import { ApiError, request } from './client'
 import {
   createAdjustment,
   freezeUser,
+  hasAdminAccess,
   listAdminGiftTiers,
   unfreezeUser,
   upsertAdminGiftTier,
@@ -62,6 +63,19 @@ describe('admin API adapters', () => {
       idempotent: true,
       idempotencyKey: 'adjustment-1',
     })
+  })
+
+  it('confirms administrator access without surfacing a denial toast', async () => {
+    vi.mocked(request).mockResolvedValueOnce([])
+
+    await expect(hasAdminAccess()).resolves.toBe(true)
+    expect(request).toHaveBeenCalledWith({ path: '/v1/admin/gift-tiers', silent: true })
+  })
+
+  it('treats a denied administrator read as no access', async () => {
+    vi.mocked(request).mockRejectedValueOnce(new ApiError('denied', 'ADMIN_ACCESS_DENIED', 403))
+
+    await expect(hasAdminAccess()).resolves.toBe(false)
   })
 
   it('reads all gift tiers through the administrator endpoint', async () => {
