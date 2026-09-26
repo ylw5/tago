@@ -16,6 +16,10 @@ function stepCarousel(step: number) {
 }
 
 function openComposer() { uni.navigateTo({ url: '/pages/tag/compose?edit=1' }) }
+async function refreshRecommendations() {
+  await refresh()
+  if (!error.value && !tags.value.length) uni.showToast({ title: '暂时没有新的推荐', icon: 'none' })
+}
 const drawerOpen = shallowRef(false)
 const bidOpen = shallowRef(false)
 function openPinnedTag(tag: TagItem) { uni.navigateTo({ url: `/pages/tag/detail?id=${encodeURIComponent(tag.id)}&pinned=1` }) }
@@ -60,7 +64,7 @@ onShow(load)
     <view class="discover-section discover-section--recommend">
       <view class="discover-section__head">
         <text class="discover-section__title">也许你会想认识这些Tag</text>
-        <button class="discover-section__refresh" :class="{ 'is-spinning': refreshing }" :disabled="loading || refreshing" @click="refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 0 0-8 8a8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" /></svg>换一批</button>
+        <button class="discover-section__refresh" :class="{ 'is-spinning': refreshing }" :disabled="loading || refreshing" @click="refreshRecommendations"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 0 0-8 8a8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" /></svg>换一批</button>
       </view>
       <AsyncState :loading="loading" :error="error" :empty="!tags.length" empty-title="暂时没有推荐" empty-description="稍后刷新，看看有没有新的同频 Tag。" @retry="load">
         <view class="discover-list" :class="{ 'discover-list--loading': loading || refreshing }"><TagCard v-for="tag in tags" :key="tag.id" :tag="tag" @action="openTag" /></view>

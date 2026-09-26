@@ -11,6 +11,8 @@ type Balance = components['schemas']['WalletBalance']
 type Entry = components['schemas']['WalletEntry']
 
 const COINS_PER_YUAN = 10
+const ADMIN_WECHAT_ID = 'Sic901'
+const ADMIN_WECHAT_QR = '/static/wallet/wechat-qr.webp'
 const packages = [
   { coins: 100, tint: '#fbf1d3' },
   { coins: 300, tint: '#e3f1e3' },
@@ -34,6 +36,7 @@ const entries = shallowRef<Entry[]>([])
 const selectedCoins = shallowRef(300)
 const loading = shallowRef(false)
 const error = shallowRef('')
+const rechargeOpen = shallowRef(false)
 
 const price = computed(() => selectedCoins.value / COINS_PER_YUAN)
 
@@ -56,13 +59,19 @@ async function load() {
 }
 
 function showExchangeRule() {
-  uni.showModal({ title: '星币兑换说明', content: `${COINS_PER_YUAN} 星币 = 1 元。星币可用于参与 Tag 置顶与轮播，让更多人看见你的期待。`, showCancel: false, confirmColor: '#20584f' })
+  uni.showModal({ title: '星币兑换说明', content: `1 元 = ${COINS_PER_YUAN} 星币。星币可用于参与 Tag 置顶与轮播，让更多人看见你的期待。`, showCancel: false, confirmColor: '#20584f' })
 }
 function showEarnRule() {
   uni.showModal({ title: '获取星币', content: '选择下方的星币数量充值即可获得星币；新人礼物与活动奖励也会自动存入钱包。', showCancel: false, confirmColor: '#20584f' })
 }
 function recharge() {
-  uni.showToast({ title: '充值通道即将开放', icon: 'none' })
+  rechargeOpen.value = true
+}
+function closeRecharge() {
+  rechargeOpen.value = false
+}
+function copyWechat() {
+  uni.setClipboardData({ data: ADMIN_WECHAT_ID })
 }
 
 onShow(load)
@@ -99,7 +108,7 @@ onShow(load)
           <text class="card__title">星币兑换说明</text>
           <image class="card__help" src="/static/icons/question.png" mode="aspectFit" />
         </view>
-        <text class="exchange__rate">{{ COINS_PER_YUAN }} 星币 = 1 元</text>
+        <text class="exchange__rate">1 元 = {{ COINS_PER_YUAN }} 星币</text>
         <text class="exchange__side">用星星，遇见更好的你 ♥</text>
       </view>
 
@@ -155,6 +164,21 @@ onShow(load)
         </view>
       </view>
     </AsyncState>
+
+    <view v-if="rechargeOpen" class="recharge" @click="closeRecharge" @touchmove.stop.prevent>
+      <view class="recharge__card" role="dialog" aria-modal="true" aria-label="联系管理员充值" @click.stop>
+        <button class="recharge__close" aria-label="关闭" @click="closeRecharge" />
+        <text class="recharge__title">联系管理员充值</text>
+        <text class="recharge__notice">目前在线充值暂未开放，\n辛苦您添加管理员微信进行充值</text>
+        <image class="recharge__qr" :src="ADMIN_WECHAT_QR" mode="aspectFit" />
+        <view class="recharge__id">
+          <text class="recharge__id-label">微信号</text>
+          <text class="recharge__id-value" selectable>{{ ADMIN_WECHAT_ID }}</text>
+          <button class="recharge__copy" @click="copyWechat">复制</button>
+        </view>
+        <button class="recharge__done" @click="closeRecharge">我知道了</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -227,4 +251,18 @@ $card: rgba(252,248,236,.95);
 .record__delta { color:#262a2c; font-size:17px; font-weight:800; }
 .record__delta--in { color:#2f8a4f; }
 .records__empty { display:block; padding:18px 0; color:#8b918a; font-size:12px; text-align:center; }
+
+.recharge { position:fixed; z-index:40; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(28,36,30,.45); }
+.recharge__card { position:relative; display:flex; width:min(100%, 340px); flex-direction:column; align-items:center; padding:22px 20px 18px; border-radius:22px 18px 24px 20px; background:#fcf8ec; box-shadow:0 10px 30px rgba(28,36,30,.22); }
+.recharge__close { position:absolute; top:12px; right:12px; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:#e3f0ea; }
+.recharge__close::before { content:''; position:absolute; inset:0; background:linear-gradient($ink,$ink) center / 14px 2px no-repeat, linear-gradient($ink,$ink) center / 2px 14px no-repeat; transform:rotate(45deg); }
+.recharge__close::after, .recharge__copy::after, .recharge__done::after { border:0; }
+.recharge__title { padding:0 36px; color:$navy; font-size:18px; font-weight:900; letter-spacing:1px; text-align:center; }
+.recharge__notice { display:block; max-width:16em; margin-top:8px; color:#4a6484; font-size:14px; font-weight:400; line-height:1.7; text-align:center; white-space:pre-line; }
+.recharge__qr { width:220px; height:220px; margin-top:14px; border-radius:8px; background:#fff; }
+.recharge__id { display:flex; width:100%; align-items:center; gap:8px; margin-top:12px; padding:8px 8px 8px 14px; border-radius:999px; background:#f3eee2; }
+.recharge__id-label { color:#7a8a84; font-size:12px; }
+.recharge__id-value { min-width:0; flex:1; color:$ink; font-size:16px; font-weight:800; }
+.recharge__copy { height:32px; margin:0; padding:0 14px; border:0; border-radius:999px; background:$ink; color:#fff; font-size:13px; font-weight:700; line-height:32px; }
+.recharge__done { width:100%; height:46px; margin-top:16px; border:0; border-radius:999px; background:linear-gradient(180deg,#1f6a60,#17504a); color:#fff; font-size:16px; font-weight:900; letter-spacing:2px; line-height:46px; }
 </style>
