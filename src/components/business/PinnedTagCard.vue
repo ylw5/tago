@@ -28,8 +28,10 @@ const progress = useExposureProgress()
       <path d="M22 23c.8 5.5 2.8 7.5 8 8.3-5.2.8-7.2 2.8-8 8.3-.8-5.5-2.8-7.5-8-8.3 5.2-.8 7.2-2.8 8-8.3Z" />
     </svg>
     <view class="pinned__identity">
-      <AvatarBadge size="lg" :user="tag.author" />
-      <text class="pinned__name">{{ tag.author.name }}</text>
+      <view class="pinned__person">
+        <AvatarBadge size="lg" :user="tag.author" />
+        <text class="pinned__name">{{ tag.author.name }}</text>
+      </view>
       <text class="pinned__title">{{ tag.title }}</text>
     </view>
     <view class="pinned__questions">
@@ -62,9 +64,10 @@ const progress = useExposureProgress()
 .pinned__gavel { display:block; width:46px; height:46px; margin-right:-10px; mix-blend-mode:multiply; }
 .pinned__participate-label { position:relative; z-index:0; display:block; padding:3px 8px 4px; color:#8e321c; font-size:12px; font-weight:900; letter-spacing:1px; line-height:1; white-space:nowrap; -webkit-text-stroke:.25px currentColor; }
 .pinned__participate-label::before { content:''; position:absolute; z-index:-1; inset:1px -3px 0; background:linear-gradient(95deg,#f7df8c,#f4d36e 55%,#f8e39b); clip-path:polygon(1% 14%,8% 7%,15% 11%,28% 2%,42% 8%,53% 0,68% 7%,81% 2%,94% 9%,100% 5%,97% 89%,85% 95%,72% 91%,57% 100%,42% 93%,28% 98%,13% 91%,3% 96%); transform:rotate(-1deg); }
-.pinned__identity { position:relative; z-index:2; display:flex; align-items:center; gap:12rpx; min-height:82rpx; }
-.pinned__name { color:#242820; font-size:29rpx; font-weight:700; }
-.pinned__title { min-width:0; overflow:hidden; padding:7rpx 14rpx; border-radius:22rpx; background:rgba(250,220,112,.8); color:#242820; font-size:27rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
+.pinned__identity { position:relative; z-index:2; display:flex; align-items:flex-start; gap:12rpx; min-height:82rpx; }
+.pinned__person { display:flex; width:88rpx; flex:none; flex-direction:column; align-items:center; gap:6rpx; }
+.pinned__name { max-width:100%; overflow:hidden; color:var(--tago-ink); font-size:20rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
+.pinned__title { min-width:0; max-width:100%; overflow:hidden; padding:7rpx 14rpx; border-radius:22rpx; background:rgba(250,220,112,.8); color:#242820; font-size:27rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
 .pinned__questions { position:relative; z-index:2; display:flex; min-width:0; padding:5rpx 8rpx; flex-direction:column; }
 .pinned__questions > view { display:grid; grid-template-columns:44rpx 1fr; gap:4rpx; min-width:0; padding:5rpx 9rpx; border-radius:14rpx; background:rgba(255,255,255,.76); color:#514f46; font-size:17rpx; line-height:1.24; }
 .pinned__questions > view + view { margin-top:8rpx; }
@@ -92,15 +95,16 @@ const progress = useExposureProgress()
 @media (max-width:480px) {
   .pinned { height:auto; min-height:0; margin-top:10px; padding:34px 14px 10px; }
   .pinned__heading { top:2px; right:4px; left:2px; }
-  .pinned__label { gap:4px; padding:4px 12px 5px 8px; font-size:14px; letter-spacing:1px; line-height:1.2; transform:rotate(-2deg); }
+  .pinned__label { gap:4px; margin:-8px 0 0 -10px; padding:4px 12px 5px 8px; font-size:14px; letter-spacing:1px; line-height:1.2; transform:rotate(-2deg); }
   .pinned__crown { width:17px; height:17px; }
   .pinned__participate { position:absolute; top:-14px; right:2px; height:48px; padding:0; transform:rotate(2deg); }
   .pinned__gavel { width:56px; height:48px; margin-right:-8px; }
   .pinned__participate-label { margin-top:10px; padding:3px 8px 4px; font-size:13px; font-weight:900; letter-spacing:1.5px; }
   .pinned__participate-label::before { inset:0 -3px -1px; }
-  .pinned__identity { gap:10px; min-height:30px; padding-left:52px; }
-  .pinned__identity :deep(.avatar--lg) { position:absolute; top:-4px; left:0; width:44px; height:44px; }
-  .pinned__name { max-width:72px; overflow:hidden; font-size:15px; text-overflow:ellipsis; white-space:nowrap; }
+  .pinned__identity { gap:8px; min-height:0; padding-left:52px; }
+  .pinned__person { position:absolute; top:-4px; left:0; width:44px; gap:2px; }
+  .pinned__identity :deep(.avatar--lg) { width:44px; height:44px; }
+  .pinned__name { font-size:10px; }
   .pinned__title { padding:4px 12px; border-radius:8px; background:rgba(250,222,120,.62); font-size:18px; font-weight:800; }
   .pinned__questions { margin-top:4px; margin-left:52px; padding:0; }
   .pinned__questions > view { grid-template-columns:30px minmax(0,1fr); align-items:center; gap:8px; padding:4px 8px 4px 4px; border-radius:8px; background:rgba(255,255,255,.55); }

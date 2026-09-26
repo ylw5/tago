@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { getCurrentInstance, nextTick, onMounted, shallowRef, watch } from 'vue'
+import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import { onHide, onShow } from '@dcloudio/uni-app'
 import type { TagItem } from '@/types/models'
 import type { DiscoverExposureTag } from '@/composables/useDiscoverData'
 import { useExposureProgress } from '@/composables/useExposureProgress'
@@ -10,12 +11,30 @@ const emit = defineEmits<{ action: [tag: TagItem]; 'update:index': [index: numbe
 
 const target = shallowRef('')
 let scrolledIndex = props.index
+let scrollLockTimer: ReturnType<typeof setTimeout> | undefined
+
+function alignToIndex(index: number) {
+  clearTimeout(scrollLockTimer)
+  scrollLockTimer = setTimeout(() => { scrollLockTimer = undefined }, 450)
+  if (typeof document !== 'undefined') {
+    const card = document.getElementById(`carousel-card-${index}`)
+    const scroller = card?.closest('.uni-scroll-view-scrollbar-hidden') as HTMLElement | null
+    if (card && scroller) {
+      const last = props.items.length - 1
+      const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth)
+      const raw = scroller.scrollLeft + card.getBoundingClientRect().left - scroller.getBoundingClientRect().left
+      scroller.scrollTo({ left: index >= last ? max : Math.min(max, Math.max(0, raw)), behavior: 'smooth' })
+      return
+    }
+  }
+  target.value = ''
+  setTimeout(() => { target.value = `carousel-card-${index}` })
+}
 
 watch(() => props.index, index => {
   if (index === scrolledIndex) return
   scrolledIndex = index
-  target.value = ''
-  setTimeout(() => { target.value = `carousel-card-${index}` })
+  alignToIndex(index)
 })
 
 const instance = getCurrentInstance()
@@ -29,6 +48,7 @@ onMounted(measureTrack)
 watch(() => props.items.length, () => nextTick(measureTrack))
 
 function onScroll(event: { detail: { scrollLeft: number; scrollWidth: number } }) {
+  if (scrollLockTimer) return
   const { scrollLeft, scrollWidth } = event.detail
   const last = props.items.length - 1
   const range = scrollWidth - trackWidth
@@ -39,19 +59,37 @@ function onScroll(event: { detail: { scrollLeft: number; scrollWidth: number } }
   scrolledIndex = index
   emit('update:index', index)
 }
+const AUTOPLAY_INTERVAL = 5000
+let autoplayTimer: ReturnType<typeof setTimeout> | undefined
+let touching = false
+let pageActive = true
+function scheduleAutoplay() {
+  clearTimeout(autoplayTimer)
+  autoplayTimer = undefined
+  if (!pageActive || touching || props.items.length < 2) return
+  autoplayTimer = setTimeout(() => emit('update:index', (props.index + 1) % props.items.length), AUTOPLAY_INTERVAL)
+}
+function onTouchStart() { touching = true; scheduleAutoplay() }
+function onTouchEnd() { touching = false; scheduleAutoplay() }
+watch([() => props.index, () => props.items.length], scheduleAutoplay, { immediate: true })
+onShow(() => { pageActive = true; scheduleAutoplay() })
+onHide(() => { pageActive = false; scheduleAutoplay() })
+onBeforeUnmount(() => { clearTimeout(autoplayTimer); clearTimeout(scrollLockTimer) })
+
 const progress = useExposureProgress()
+function tagLabel(tag: { title: string }) { return tag.title.replace(/^#\s*/, '').trim() }
 </script>
 
 <template>
   <view class="carousel" v-if="items.length">
-    <scroll-view class="carousel__track" scroll-x scroll-with-animation :show-scrollbar="false" :scroll-into-view="target" @scroll="onScroll">
+    <scroll-view class="carousel__track" scroll-x scroll-with-animation :show-scrollbar="false" :scroll-into-view="target" @scroll="onScroll" @touchstart="onTouchStart" @touchend="onTouchEnd" @touchcancel="onTouchEnd">
       <view v-for="(tag, i) in items" :id="`carousel-card-${i}`" :key="tag.id" class="carousel__card" :class="`carousel__card--${tag.tone}`" @click="emit('action', tag)">
-        <AvatarBadge class="carousel__avatar" size="md" :user="tag.author" />
+        <view class="carousel__identity">
+          <AvatarBadge class="carousel__avatar" size="md" :user="tag.author" />
+          <text class="carousel__name">{{ tag.author.name }}</text>
+        </view>
         <view class="carousel__body">
-          <view class="carousel__top">
-            <text class="carousel__name">{{ tag.author.name }}</text>
-            <text class="carousel__title">{{ tag.title }}</text>
-          </view>
+          <text v-if="tagLabel(tag)" class="carousel__title"><text class="carousel__mark"><text class="carousel__hash">#</text>{{ tagLabel(tag) }}</text></text>
           <text class="carousel__summary">{{ tag.summary }}</text>
           <view class="carousel__bottom">
             <view class="carousel__coin"><image class="carousel__coin-icon" src="/static/stickers/coin.png" mode="aspectFill" aria-hidden="true" />{{ tag.price ?? '—' }}</view>
@@ -67,23 +105,25 @@ const progress = useExposureProgress()
 <style scoped lang="scss">
 .carousel { position:relative; margin:0 -28rpx; }
 .carousel__track { display:flex; width:100%; padding:6rpx 0 4rpx; white-space:nowrap; }
-.carousel__card { position:relative; display:inline-grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:14rpx; width:calc(58% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:#fff4d7; box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); vertical-align:top; white-space:normal; }
+.carousel__card { position:relative; display:inline-grid; grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:14rpx; width:calc(68% - 14rpx); min-height:150rpx; margin:0 0 0 14rpx; padding:16rpx 18rpx 14rpx; overflow:hidden; border-radius:16rpx 10rpx 18rpx 11rpx; background:#fff4d7; box-shadow:0 8rpx 18rpx rgba(93,77,30,.08); vertical-align:top; white-space:normal; }
 .carousel__card:first-child { margin-left:28rpx; }
 .carousel__card:last-child { margin-right:28rpx; }
 .carousel__card--blue { background:#e4f2fb; }
 .carousel__card--green { background:#e7f3df; }
 .carousel__card:nth-child(odd) { transform:rotate(-.5deg); }
 .carousel__card:nth-child(even) { transform:rotate(.6deg); }
+.carousel__identity { display:flex; width:88rpx; flex-direction:column; align-items:center; gap:6rpx; }
+.carousel__name { max-width:100%; overflow:hidden; color:var(--tago-ink); font-size:20rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
 .carousel__body { display:flex; min-width:0; flex-direction:column; gap:6rpx; }
-.carousel__top { display:flex; align-items:baseline; min-width:0; gap:12rpx; }
-.carousel__name { flex:none; max-width:40%; overflow:hidden; color:#242820; font-size:25rpx; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
-.carousel__title { min-width:0; overflow:hidden; color:#242820; font-size:24rpx; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
-.carousel__summary { display:block; overflow:hidden; color:#66716d; font-size:19rpx; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
+.carousel__title { display:-webkit-box; overflow:hidden; color:#1d2622; font-size:30rpx; font-weight:800; line-height:1.3; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.carousel__mark { background:linear-gradient(transparent 55%,rgba(250,215,95,.7) 55%); -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+.carousel__hash { margin-right:4rpx; color:var(--tago-primary); }
+.carousel__summary { display:block; overflow:hidden; color:#3a423e; font-size:24rpx; font-weight:600; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
 .carousel__bottom { display:flex; align-items:center; gap:9rpx; }
-.carousel__coin { display:flex; align-items:center; gap:5rpx; flex:none; color:#9a4327; font-size:28rpx; font-weight:850; }
-.carousel__coin-icon { display:block; width:36rpx; height:36rpx; flex:none; }
-.carousel__progress { flex:1; height:18rpx; padding:3rpx; border-radius:999rpx; background:rgba(117,128,128,.23); }
-.carousel__progress view { height:100%; border-radius:999rpx; background:#4e8b7d; }
+.carousel__coin { display:flex; align-items:center; gap:4rpx; flex:none; max-width:calc(100% - 96rpx); overflow:hidden; color:#9a4327; font-size:24rpx; font-weight:800; }
+.carousel__coin-icon { display:block; width:32rpx; height:32rpx; flex:none; }
+.carousel__progress { flex:1; min-width:80rpx; height:12rpx; border-radius:999rpx; background:rgba(117,128,128,.16); }
+.carousel__progress view { height:100%; border-radius:999rpx; background:rgba(78,139,125,.6); }
 .carousel__dots { display:flex; justify-content:center; gap:14rpx; padding-top:10rpx; }
 .carousel__dots i { width:16rpx; height:16rpx; border-radius:50%; background:#c8cdd1; transition:background .2s ease; }
 .carousel__dots .is-active { background:var(--tago-primary); }
@@ -94,14 +134,15 @@ const progress = useExposureProgress()
   .carousel__card:first-child { margin-left:14px; }
   .carousel__card:last-child { margin-right:14px; }
   .carousel :deep(.avatar--md) { width:38px; height:38px; }
+  .carousel__identity { width:44px; gap:3px; }
+  .carousel__name { font-size:10px; }
   .carousel__body { gap:3px; }
-  .carousel__top { gap:6px; }
-  .carousel__name { font-size:12px; }
-  .carousel__title { font-size:12px; }
-  .carousel__summary { font-size:9px; }
-  .carousel__coin { gap:2px; font-size:14px; }
-  .carousel__coin-icon { width:19px; height:19px; clip-path:circle(42% at 50% 50%); }
-  .carousel__progress { height:9px; padding:1px; }
+  .carousel__title { font-size:15px; }
+  .carousel__hash { margin-right:2px; }
+  .carousel__summary { font-size:12px; }
+  .carousel__coin { gap:2px; max-width:calc(100% - 48px); font-size:12px; }
+  .carousel__coin-icon { width:16px; height:16px; clip-path:circle(42% at 50% 50%); }
+  .carousel__progress { min-width:40px; height:6px; }
   .carousel__dots { gap:7px; padding-top:4px; }
   .carousel__dots i { width:7px; height:7px; }
 }
