@@ -55,6 +55,7 @@ const walletRows = computed<SettingsRow[]>(() => [
 ])
 const serviceRows: SettingsRow[] = [
   { id: 'service', symbol: '⚙', title: '服务状态与管理工具', description: '查看全部接口能力与实时状态' },
+  { id: 'admin', symbol: '管', title: '管理员工具', description: '用户、Coin 与礼物档位' },
 ]
 
 async function load() {
@@ -136,6 +137,7 @@ function openRow(row: SettingsRow) {
   else if (row.id === 'history') uni.navigateTo({ url: '/pages/tag/history' })
   else if (row.id === 'wallet') uni.navigateTo({ url: '/pages/wallet/index' })
   else if (row.id === 'exposure') uni.navigateTo({ url: '/pages/exposure/index' })
+  else if (row.id === 'admin') uni.navigateTo({ url: '/pages/admin/index' })
   else if (row.id === 'service' || row.id === 'blocks' || row.id === 'chat') uni.navigateTo({ url: `/pages/service/index?focus=${row.id}` })
 }
 
