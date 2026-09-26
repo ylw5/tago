@@ -11,10 +11,21 @@ declare module 'tinode-sdk' {
     getCurrentUserID(): string | null
     getServerInfo(): { version?: string } | null
     getTopic(name:string): TinodeTopic
+    getMeTopic(): TinodeTopic
   }
   export interface TinodePublishMessage { head?:Record<string,string>; content:string }
   export interface TinodeMessage { seq?:number; from?:string; ts?:Date|string; content?:string|{txt?:string} }
   export interface TinodeTopic {
+    name?:string
+    topic?:string
+    unread?:number
+    seq?:number
+    read?:number
+    recv?:number
+    deleted?:Date|string
+    onMetaSub?: (contact:TinodeTopic)=>void
+    onContactUpdate?: (what:string, contact?:TinodeTopic)=>void
+    leave(unsubscribe?:boolean): Promise<unknown>
     onData?: (message:TinodeMessage)=>void
     onInfo?: (info:{ what:string; from?:string; seq?:number })=>void
     subscribe(get?:unknown, set?:unknown): Promise<unknown>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
 import { computed, nextTick, shallowRef, watch } from 'vue'
 import dayjs from 'dayjs'
 import { getProfile } from '@/api/account'
@@ -10,7 +10,7 @@ import AvatarImage from '@/components/ui/AvatarImage.vue'
 import { goBack } from '@/utils/navigation'
 
 const conversationId=shallowRef(''),draft=shallowRef(''),messageScrollTop=shallowRef(0),initialScrollReady=shallowRef(false),myAvatarId=shallowRef('')
-const {detail,messages,encounters,selectedEncounter,loading,connecting,sending,error,sendError,connected,load,send,openEncounter,closeEncounter}=useTinodeConversation()
+const {detail,messages,encounters,selectedEncounter,loading,connecting,sending,error,sendError,connected,load,send,openEncounter,closeEncounter,show,hide}=useTinodeConversation()
 // 关系上下文：从相遇快照提取 Tag 名 + 按接受认识日计算「第 N 天」（PRD FR-6.1）
 const relationTag=computed(()=>{const summary=encounters.value[0]?.summary||detail.value?.latestEncounter?.summary;return summary?.match(/「(.+?)」/)?.[1]||summary?.trim()||null})
 const relationDays=computed(()=>{const accepted=encounters.value[0]?.acceptedAt||detail.value?.latestEncounter?.acceptedAt;if(!accepted)return null;const days=dayjs().diff(dayjs(accepted),'day');return Math.max(1,days+1)})
@@ -36,6 +36,8 @@ function openMore(){
   if(!firstEncounterId.value){uni.showToast({title:'更多功能即将上线',icon:'none'});return}
   uni.showActionSheet({itemList:['查看彼此当时的回答'],success:({tapIndex})=>{if(tapIndex===0)showEncounter()}})
 }
+onShow(show)
+onHide(hide)
 onLoad(q=>{
   conversationId.value=typeof q?.id==='string'?q.id:''
   if(conversationId.value)load(conversationId.value)

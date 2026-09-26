@@ -10,7 +10,7 @@ import { useMeetData } from '@/composables/useMeetData'
 const STALE_DAYS = 7
 
 const { applications, load: loadApplications } = useApplicationsData()
-const { conversations, loading: chatsLoading, error: chatsError, load: loadChats } = useMeetData()
+const { conversations, unreadError, loading: chatsLoading, error: chatsError, load: loadChats } = useMeetData()
 const staleExpanded = shallowRef(false)
 const staleBefore = computed(() => dayjs().subtract(STALE_DAYS, 'day'))
 const recentConversations = computed(() => conversations.value.filter(item => !dayjs(item.lastActiveAt).isBefore(staleBefore.value)))
@@ -44,6 +44,7 @@ onShow(() => { void loadApplications(); void loadChats() })
       <text class="tago-section-title">聊天列表</text>
       <view class="conversation-heading__note"><text>好的相遇</text><text>会让平凡的日子发光 ♡</text></view>
     </view>
+    <text v-if="unreadError" role="status">未读消息暂未同步：{{ unreadError }}</text>
     <AsyncState :loading="chatsLoading" :error="chatsError" :empty="!conversations.length" empty-title="还没有遇见的人" empty-description="当认识申请被接受后，你们的会话会出现在这里。" @retry="loadChats">
       <template #empty-icon>
         <svg class="empty-chat-icon" viewBox="0 0 96 96" fill="none" aria-hidden="true">

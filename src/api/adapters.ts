@@ -143,6 +143,7 @@ export function conversationDtoToItem(
   const fallbackPreview = item.activity?.state === 'NO_MESSAGES' ? '还没有聊过，先打个招呼吧～' : `建立于${relativeTime(item.createdAt)}`
   return {
     id: item.id,
+    peerTinodeUserId: item.peerTinodeUserId,
     user,
     tagTitle,
     reasonTag,

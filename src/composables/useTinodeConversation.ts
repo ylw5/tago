@@ -1,86 +1,80 @@
-import { computed, onUnmounted, shallowRef } from 'vue'
+import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import type { Tinode, TinodeMessage, TinodeTopic } from 'tinode-sdk'
-import * as TinodeModule from 'tinode-sdk'
-import { createChatConnection, createConversationConnection, getChatDetail, getEncounterDetail, listEncounters } from '@/api/chat'
+import { ensureTinodeSession, tinodeSession, syncTinodeUnread, withChatTimeout } from './useTinodeSession'
+import { createConversationConnection, getChatDetail, getEncounterDetail, listEncounters } from '@/api/chat'
 import type { ConversationDetailDto, EncounterDetailDto } from '@/api/chat'
 
 export interface LiveMessage { id:string; text:string; mine:boolean; time:string; sequence:number; read?:boolean }
-
-type TinodeFactory = typeof TinodeModule.Tinode
-// Node resolves this UMD package to { default: { Tinode } }; Vite may expose the named class.
-const createTinode:TinodeFactory = TinodeModule.Tinode ?? (TinodeModule.default as unknown as { Tinode: typeof TinodeModule.Tinode }).Tinode
-const CHAT_SUBSCRIBE_TIMEOUT_MS=3000
-
-function encodeChatSecret(value:string) {
-  const digits='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-  const bytes=Array.from(value, character => character.charCodeAt(0))
-  let output=''
-  for(let index=0;index<bytes.length;index+=3){
-    const a=bytes[index]!,b=bytes[index+1]??0,c=bytes[index+2]??0
-    output+=digits[a>>2]
-    output+=digits[(a&3)<<4|b>>4]
-    output+=index+1<bytes.length?digits[(b&15)<<2|c>>6]:'='
-    output+=index+2<bytes.length?digits[c&63]:'='
-  }
-  return output
-}
-
-async function waitForChatHandshake(instance:Tinode) {
-  for(let attempt=0;attempt<100;attempt+=1){
-    if(instance.getServerInfo())return
-    await new Promise(resolve=>setTimeout(resolve,50))
-  }
-  throw new Error('聊天握手超时')
-}
 
 export function useTinodeConversation() {
   const detail=shallowRef<ConversationDetailDto|null>(null),messages=shallowRef<LiveMessage[]>([]),encounters=shallowRef<Awaited<ReturnType<typeof listEncounters>>['items']>([]),selectedEncounter=shallowRef<EncounterDetailDto|null>(null)
   const loading=shallowRef(false),connecting=shallowRef(false),sending=shallowRef(false),error=shallowRef(''),sendError=shallowRef(''),connected=shallowRef(false)
   let tinode:Tinode|null=null, topic:TinodeTopic|null=null, me:string|null=null
   let activeTopicHandle:string|null=null
+  let visible=true, revision=0, currentConversation=''
+  let topicWork:Promise<void>=Promise.resolve(), leaving:Promise<unknown>=Promise.resolve()
+  function markRead(seq?:number){if(visible && (typeof document==='undefined'||document.visibilityState!=='hidden') && topic)try{topic.noteRead(seq);syncTinodeUnread(topic)}catch{/* 已读回执失败不影响消息展示 */}}
+  function release(){
+    revision++
+    const previous=topic
+    topic=null;activeTopicHandle=null;connected.value=false;connecting.value=false
+    if(previous){previous.onData=undefined;previous.onInfo=undefined;leaving=previous.leave(false).catch(()=>{})}
+  }
+  function hide(){visible=false;release()}
+  function show(){visible=true;if(currentConversation&&!topic&&!connecting.value)void connect(currentConversation).catch(cause=>{error.value=cause instanceof Error?cause.message:'聊天连接失败'})}
+  function visibilityChanged(){if(typeof document!=='undefined'&&document.visibilityState==='visible')markRead()}
+  if(typeof document!=='undefined')document.addEventListener('visibilitychange',visibilityChanged)
+  const stopSessionWatch=watch(tinodeSession.client,client=>{
+    if(!client){release();return}
+    if(visible&&currentConversation&&!connecting.value)show()
+  },{flush:'sync'})
 
   function textOf(message?:TinodeMessage){return !message?'':typeof message.content==='string'?message.content:message.content?.txt||''}
   function readByPeer(sequence:number){try{return (topic?.msgReadCount(sequence)||0)>0}catch{return false}}
-  function ingest(message?:TinodeMessage){const text=textOf(message);if(!message||!text)return;const sequence=message.seq||Date.now();const mine=message.from===me;const item:LiveMessage={id:String(sequence),sequence,text,mine,read:mine&&readByPeer(sequence),time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence);if(!mine&&message.seq&&topic)try{topic.noteRead(message.seq)}catch{/* 已读回执失败不影响消息展示 */}}
+  function ingest(message?:TinodeMessage){const text=textOf(message);if(!message||!text)return;const sequence=message.seq||Date.now();const mine=message.from===me;const item:LiveMessage={id:String(sequence),sequence,text,mine,read:mine&&readByPeer(sequence),time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence);if(!mine&&message.seq)markRead(message.seq)}
   function refreshReadState(){messages.value=messages.value.map(item=>item.mine?{...item,read:readByPeer(item.sequence)}:item)}
-  async function connect(conversationId:string){
+  function connect(conversationId:string){
+    const task=topicWork.catch(()=>{}).then(()=>{if(visible&&currentConversation===conversationId)return attach(conversationId)})
+    topicWork=task
+    return task
+  }
+  async function attach(conversationId:string){
+    release()
+    const attempt=revision
     connecting.value=true
     topic=null
     activeTopicHandle=null
     connected.value=false
     messages.value=[]
     try{
+      await leaving
+      if(attempt!==revision||!visible)return
       const conversation=await createConversationConnection(conversationId)
-      // Tinode ticket is single-use: fetch the topic first, then issue the login ticket.
-      const bootstrap=await createChatConnection()
-      const endpoint=new URL(bootstrap.endpoint)
-      tinode=new createTinode({host:endpoint.host,secure:endpoint.protocol==='https:',apiKey:bootstrap.apiKey,appName:'TAGO H5',platform:'web',transport:'ws',persist:false})
-      tinode.onDisconnect=()=>{connected.value=false}
-      await tinode.connect()
-      await waitForChatHandshake(tinode)
-      await tinode.login(bootstrap.authenticationScheme,encodeChatSecret(bootstrap.ticket))
+      if(attempt!==revision||!visible)return
+      tinode=await ensureTinodeSession()
+      if(attempt!==revision||!visible)return
       me=tinode.getCurrentUserID()
       const activeTopic=tinode.getTopic(conversation.topicHandle)
       topic=activeTopic
       activeTopicHandle=conversation.topicHandle
       activeTopic.onData=ingest
       activeTopic.onInfo=info=>{if(info.what==='read')refreshReadState()}
-      await Promise.race([
-        // sub 元数据携带对方的 read 序号，用于展示「已读」
-        activeTopic.subscribe({what:'sub data',data:{limit:50}}),
-        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('聊天活动订阅超时')),CHAT_SUBSCRIBE_TIMEOUT_MS)),
-      ])
+      // sub 元数据携带对方的 read 序号，用于展示「已读」。
+      await withChatTimeout(activeTopic.subscribe({what:'sub data',data:{limit:50}}))
+      if(attempt!==revision||!visible){activeTopic.onData=undefined;activeTopic.onInfo=undefined;await activeTopic.leave(false).catch(()=>{});return}
       const history:TinodeMessage[]=[]
       activeTopic.messages(message=>history.push(message))
       history.forEach(ingest)
       refreshReadState()
-      try{activeTopic.noteRead()}catch{/* 已读回执失败不影响消息展示 */}
+      markRead()
+      error.value=''
       connected.value=true
-    }catch(cause){connected.value=false;topic=null;activeTopicHandle=null;tinode?.disconnect();tinode=null;throw cause}finally{connecting.value=false}
+    }catch(cause){if(attempt===revision){release();throw cause}}finally{if(attempt===revision)connecting.value=false}
   }
-  async function load(conversationId:string){loading.value=true;error.value='';try{const [conversation,history]=await Promise.all([getChatDetail(conversationId),listEncounters(conversationId,{limit:30})]);detail.value=conversation;encounters.value=history.items;await connect(conversationId)}catch(cause){error.value=cause instanceof Error?cause.message:'聊天连接失败'}finally{loading.value=false}}
+  async function load(conversationId:string){currentConversation=conversationId;loading.value=true;error.value='';try{const [conversation,history]=await Promise.all([getChatDetail(conversationId),listEncounters(conversationId,{limit:30})]);detail.value=conversation;encounters.value=history.items;await connect(conversationId)}catch(cause){error.value=cause instanceof Error?cause.message:'聊天连接失败'}finally{loading.value=false}}
   async function send(text:string){
     if(!connected.value||!text.trim()||sending.value)return false
+    const attempt=revision
     sending.value=true
     sendError.value=''
     try{
@@ -91,11 +85,11 @@ export function useTinodeConversation() {
       const message=tinode.createMessage(activeTopicHandle,text.trim(),true)
       message.head={clientMessageId}
       const published=await tinode.publishMessage(message)
-      ingest({seq:published.params?.seq,from:me||undefined,ts:published.ts,content:text.trim()})
+      if(attempt===revision)ingest({seq:published.params?.seq,from:me||undefined,ts:published.ts,content:text.trim()})
       return true
     }catch(cause){sendError.value=cause instanceof Error?cause.message:'消息发送失败';return false}finally{sending.value=false}}
   async function openEncounter(conversationId:string,encounterId:string){selectedEncounter.value=await getEncounterDetail(conversationId,encounterId)}
   function closeEncounter(){selectedEncounter.value=null}
-  onUnmounted(()=>tinode?.disconnect())
-  return{detail:computed(()=>detail.value),messages:computed(()=>messages.value),encounters:computed(()=>encounters.value),selectedEncounter:computed(()=>selectedEncounter.value),loading:computed(()=>loading.value),connecting:computed(()=>connecting.value),sending:computed(()=>sending.value),error:computed(()=>error.value),sendError:computed(()=>sendError.value),connected:computed(()=>connected.value),load,send,openEncounter,closeEncounter}
+  onUnmounted(()=>{hide();stopSessionWatch();if(typeof document!=='undefined')document.removeEventListener('visibilitychange',visibilityChanged)})
+  return{detail:computed(()=>detail.value),messages:computed(()=>messages.value),encounters:computed(()=>encounters.value),selectedEncounter:computed(()=>selectedEncounter.value),loading:computed(()=>loading.value),connecting:computed(()=>connecting.value),sending:computed(()=>sending.value),error:computed(()=>error.value),sendError:computed(()=>sendError.value),connected:computed(()=>connected.value),load,send,openEncounter,closeEncounter,show,hide}
 }

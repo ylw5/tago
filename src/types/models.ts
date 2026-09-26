@@ -40,6 +40,7 @@ export interface ApplicationItem {
 }
 
 export interface ConversationItem {
+  peerTinodeUserId?: string | null
   id: string
   user: UserSummary
   tagTitle: string

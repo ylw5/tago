@@ -31,6 +31,8 @@ tago_extracted/
 scripts/
 vitest.config.ts
 *.test.*
+!src/composables/useTinodeSession.test.ts
+!src/composables/useTinodeConversation.test.ts
 !src/composables/useApplicationsData.test.ts
 !src/composables/useAuthFlow.test.ts
 !src/api/adapters.test.ts
