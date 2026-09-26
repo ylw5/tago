@@ -7,6 +7,11 @@
   src: url('../static/fonts/auth-wenkai.woff2') format('woff2');
 }
 
+html {
+  color-scheme: only light;
+  background-color: var(--tago-paper);
+}
+
 page {
   min-height: 100%;
   color: var(--tago-ink);
@@ -153,6 +158,49 @@ button::after { border: 0; }
 
   /* 固定定位的底部导航跟随纸卡宽度 */
   .tabs { max-width: 500px; }
+}
+
+/* uni-h5 会在系统深色时把页面改成深色。界面尚未适配，这里强制保持浅色。 */
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: only light;
+    --UI-BG-COLOR-ACTIVE: #ececec;
+    --UI-BORDER-COLOR-1: #ececec;
+    --UI-BG: #fff;
+    --UI-BG-0: #f8f4e9;
+    --UI-BG-1: #f7f7f7;
+    --UI-BG-2: #fff;
+    --UI-BG-3: #f7f7f7;
+    --UI-BG-4: #4c4c4c;
+    --UI-BG-5: #fff;
+    --UI-FG: #000;
+    --UI-FG-0: rgba(0, 0, 0, 0.9);
+    --UI-FG-HALF: rgba(0, 0, 0, 0.9);
+    --UI-FG-1: rgba(0, 0, 0, 0.5);
+    --UI-FG-2: rgba(0, 0, 0, 0.3);
+    --UI-FG-3: rgba(0, 0, 0, 0.1);
+  }
+
+  html body,
+  html uni-page-body {
+    background-color: #f8f4e9;
+    color: #242820;
+  }
+
+  html uni-button,
+  html uni-button[type='default'] {
+    color: #000;
+    background-color: #f8f8f8;
+  }
+
+  html uni-switch .uni-switch-input {
+    border-color: #dfdfdf;
+    background-color: #dfdfdf;
+  }
+
+  html uni-switch .uni-switch-input:before {
+    background-color: #fdfdfd;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

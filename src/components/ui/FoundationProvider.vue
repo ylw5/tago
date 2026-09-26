@@ -19,7 +19,7 @@ useConfigProvider({ themeVars })
 </script>
 
 <template>
-  <wd-config-provider :theme-vars="themeVars">
+  <wd-config-provider theme="light" :theme-vars="themeVars">
     <slot />
   </wd-config-provider>
 </template>
