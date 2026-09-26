@@ -48,6 +48,7 @@ const emit = defineEmits<{ action: [] }>()
 <style scoped lang="scss">
 .entry-field {
   display: flex;
+  box-sizing: border-box;
   width: 100%;
   min-height: 88rpx;
   align-items: center;
