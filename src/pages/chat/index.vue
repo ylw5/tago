@@ -83,7 +83,7 @@ onLoad(q=>{
               <view class="bubble">{{ message.text }}</view>
               <view class="bubble-meta">
                 <text>{{ message.time }}</text>
-                <text v-if="message.mine">{{ message.read?'已读':'已送达' }}</text>
+                <text v-if="message.mine">{{ message.read?'已读':'未读' }}</text>
               </view>
             </view>
           </view>
