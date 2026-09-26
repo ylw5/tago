@@ -8,6 +8,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  add: []
   gift: []
   send: []
 }>()
@@ -20,7 +21,7 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   <view class="chat-composer">
     <text v-if="error" class="chat-composer__error" role="alert">{{ error }}</text>
     <view class="chat-composer__row">
-      <view class="chat-composer__add" aria-hidden="true" />
+      <button class="chat-composer__add" aria-label="更多" @click="emit('add')"><i aria-hidden="true" /></button>
       <view class="chat-composer__field">
         <textarea
           v-model="draft"
@@ -95,8 +96,14 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   position: relative;
 }
 
-.chat-composer__add::before,
-.chat-composer__add::after {
+.chat-composer__add i {
+  position: relative;
+  width: 30rpx;
+  height: 30rpx;
+}
+
+.chat-composer__add i::before,
+.chat-composer__add i::after {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -106,8 +113,8 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   transform: translate(-50%, -50%);
 }
 
-.chat-composer__add::before { width: 30rpx; height: 4rpx; }
-.chat-composer__add::after { width: 4rpx; height: 30rpx; }
+.chat-composer__add i::before { width: 30rpx; height: 4rpx; }
+.chat-composer__add i::after { width: 4rpx; height: 30rpx; }
 
 .chat-composer__field {
   position: relative;
@@ -119,6 +126,7 @@ const canSend = computed(() => props.connected && !props.sending && Boolean(draf
   background: #f1f0ea;
 }
 
+.chat-composer__add::after,
 .chat-composer__gift::after,
 .chat-composer__send::after { border: 0; }
 

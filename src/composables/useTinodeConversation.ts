@@ -18,7 +18,7 @@ export function useTinodeConversation() {
     revision++
     const previous=topic
     topic=null;activeTopicHandle=null;connected.value=false;connecting.value=false
-    if(previous){previous.onData=undefined;previous.onInfo=undefined;leaving=previous.leave(false).catch(()=>{})}
+    if(previous){previous.onData=undefined;previous.onInfo=undefined;previous.onMetaSub=undefined;previous.onAllMessagesReceived=undefined;leaving=previous.leave(false).catch(()=>{})}
   }
   function hide(){visible=false;release()}
   function show(){visible=true;if(currentConversation&&!topic&&!connecting.value)void connect(currentConversation).catch(cause=>{error.value=cause instanceof Error?cause.message:'聊天连接失败'})}
@@ -59,9 +59,12 @@ export function useTinodeConversation() {
       activeTopicHandle=conversation.topicHandle
       activeTopic.onData=ingest
       activeTopic.onInfo=info=>{if(info.what==='read')refreshReadState()}
+      activeTopic.onMetaSub=refreshReadState
+      // SDK 0.25.3 会用历史消息模拟 read 通知，覆盖订阅中的对方已读序号；历史收完后重新取服务端状态。
+      activeTopic.onAllMessagesReceived=()=>{void activeTopic.getMeta({what:'sub'}).catch(()=>{})}
       // sub 元数据携带对方的 read 序号，用于展示「已读」。
       await withChatTimeout(activeTopic.subscribe({what:'sub data',data:{limit:50}}))
-      if(attempt!==revision||!visible){activeTopic.onData=undefined;activeTopic.onInfo=undefined;await activeTopic.leave(false).catch(()=>{});return}
+      if(attempt!==revision||!visible){activeTopic.onData=undefined;activeTopic.onInfo=undefined;activeTopic.onMetaSub=undefined;activeTopic.onAllMessagesReceived=undefined;await activeTopic.leave(false).catch(()=>{});return}
       const history:TinodeMessage[]=[]
       activeTopic.messages(message=>history.push(message))
       history.forEach(ingest)

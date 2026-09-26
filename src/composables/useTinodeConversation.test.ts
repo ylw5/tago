@@ -4,7 +4,7 @@ import { useTinodeConversation } from './useTinodeConversation'
 
 const { subscribe, publish, disconnect, topic, cleanup } = vi.hoisted(() => ({
   subscribe: vi.fn(), publish: vi.fn(), disconnect: vi.fn(),
-  topic: {leave:vi.fn(async()=>{}), messages:vi.fn(), noteRead:vi.fn(), msgReadCount:vi.fn(()=>0)},
+  topic: {leave:vi.fn(async()=>{}), messages:vi.fn(), noteRead:vi.fn(), msgReadCount:vi.fn(()=>0), getMeta:vi.fn(async()=>{}), onAllMessagesReceived:undefined as ((count:number)=>void)|undefined, onMetaSub:undefined as ((contact:unknown)=>void)|undefined},
   cleanup: [] as (()=>void)[],
 }))
 vi.mock('vue', async () => ({ ...await vi.importActual<typeof import('vue')>('vue'), onUnmounted: (callback:()=>void) => cleanup.push(callback) }))
@@ -69,4 +69,26 @@ it('adds only the server-acknowledged message, with no automatic reply', async (
   expect(publish).toHaveBeenCalledOnce()
   await vi.advanceTimersByTimeAsync(1000)
   expect(chat.messages.value).toMatchObject([{ id: '1', mine: true, text: '你好' }])
+})
+
+it('restores server read receipts after history changes the SDK receipt state', async () => {
+  topic.msgReadCount.mockReturnValue(0)
+  const chat = useTinodeConversation()
+  await chat.load('chat')
+  await chat.send('你好')
+  expect(chat.messages.value[0]?.read).toBe(false)
+
+  topic.msgReadCount.mockReturnValue(1)
+  topic.onMetaSub?.({ user: 'peer', read: 1 })
+  expect(chat.messages.value[0]?.read).toBe(true)
+
+  topic.msgReadCount.mockReturnValue(0)
+  topic.getMeta.mockImplementationOnce(async()=>{
+    topic.msgReadCount.mockReturnValue(1)
+    topic.onMetaSub?.({user:'peer',read:1})
+  })
+  topic.onAllMessagesReceived?.(2)
+  await Promise.resolve()
+  expect(topic.getMeta).toHaveBeenCalledWith({what:'sub'})
+  expect(chat.messages.value[0]?.read).toBe(true)
 })

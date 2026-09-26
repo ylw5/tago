@@ -23,6 +23,8 @@ declare module 'tinode-sdk' {
     read?:number
     recv?:number
     deleted?:Date|string
+    onAllMessagesReceived?: (count:number)=>void
+    getMeta(query:unknown): Promise<unknown>
     onMetaSub?: (contact:TinodeTopic)=>void
     onContactUpdate?: (what:string, contact?:TinodeTopic)=>void
     leave(unsubscribe?:boolean): Promise<unknown>

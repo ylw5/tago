@@ -30,6 +30,7 @@ watch([messages,loading],()=>{
 },{flush:'post'})
 
 async function sendMessage(){if(await send(draft.value))draft.value=''}
+function addHint(){uni.showToast({title:'暂时还不支持',icon:'none'})}
 function giftHint(){uni.showToast({title:'礼物商店即将上线 ✨',icon:'none'})}
 async function showEncounter(){if(firstEncounterId.value)await openEncounter(conversationId.value,firstEncounterId.value)}
 function openMore(){
@@ -90,7 +91,7 @@ onLoad(q=>{
         </scroll-view>
       </AsyncState>
 
-      <ChatComposer v-model="draft" :connected="connected" :sending="sending" :error="sendError" @gift="giftHint" @send="sendMessage" />
+      <ChatComposer v-model="draft" :connected="connected" :sending="sending" :error="sendError" @add="addHint" @gift="giftHint" @send="sendMessage" />
     </view>
 
     <view v-if="selectedEncounter" class="encounter-modal" @click="closeEncounter">
