@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, provide } from 'vue'
 import backIcon from '@/static/auth/icon-back.svg'
-import wordmark from '@/static/illustrations/tago-wordmark.png'
-import background from '@/static/auth/auth-background.png'
+import wordmark from '@/static/illustrations/tago-wordmark.webp'
+import background from '@/static/auth/auth-background.webp'
 import { authDebugKey } from './authLayout'
 
 const props = defineProps<{

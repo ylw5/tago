@@ -56,7 +56,7 @@ onLoad(query => {
     <view class="detail-head">
       <button class="detail-head__back" aria-label="返回" @click="goBack" />
       <view class="detail-head__brand">
-        <image class="detail-head__logo" src="/static/illustrations/tago-wordmark.png" mode="aspectFit" aria-label="TAGO" />
+        <image class="detail-head__logo" src="/static/illustrations/tago-wordmark.webp" mode="aspectFit" aria-label="TAGO" />
         <view class="detail-head__spark" aria-hidden="true"><i /><i /><i /></view>
       </view>
       <text class="detail-head__title">Tag 详情</text>

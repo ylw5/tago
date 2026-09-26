@@ -8,7 +8,7 @@ function loadHandwritingFont() {
   if (typeof window === 'undefined') return
 
   const load = () => {
-    import('lxgw-wenkai-screen-webfont/style.css')
+    import('lxgw-wenkai-screen-webfont/lxgwwenkaiscreen.css')
   }
 
   const idleWindow = window as Window & {

@@ -1,3 +1,12 @@
+/* 常用认证文案只需一个小字体；其他字符继续使用原字体分片。 */
+@font-face {
+  font-family: "TAGO Auth WenKai";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../static/fonts/auth-wenkai.woff2') format('woff2');
+}
+
 page {
   min-height: 100%;
   color: var(--tago-ink);
@@ -7,7 +16,7 @@ page {
     radial-gradient(circle at 35% 82%, rgba(184,151,97,.035), transparent 31%),
     var(--tago-paper);
   background-size: auto;
-  font-family: "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "TAGO Auth WenKai", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 28rpx;
 }
 

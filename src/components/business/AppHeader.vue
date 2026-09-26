@@ -30,7 +30,7 @@ const isBranded = computed(() => props.variant === 'home' || props.variant === '
     <button v-if="back" class="header__back" aria-label="返回" @click="emit('back')" />
     <view class="header__copy">
       <view v-if="isBranded" class="header__brand">
-        <image class="header__logo" src="/static/illustrations/tago-wordmark.png" mode="aspectFit" aria-label="TAGO" />
+        <image class="header__logo" src="/static/illustrations/tago-wordmark.webp" mode="aspectFit" aria-label="TAGO" />
         <text v-if="variant === 'home'" class="header__slogan">{{ slogan }}</text>
       </view>
       <text v-else class="header__eyebrow">TAGO</text>

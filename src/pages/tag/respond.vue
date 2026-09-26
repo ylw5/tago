@@ -75,7 +75,7 @@ onLoad(q => {
     <view class="respond-head">
       <button class="respond-head__back" aria-label="返回" @click="goBack" />
       <view class="respond-head__brand">
-        <image class="respond-head__logo" src="/static/illustrations/tago-wordmark.png" mode="aspectFit" aria-label="TAGO" />
+        <image class="respond-head__logo" src="/static/illustrations/tago-wordmark.webp" mode="aspectFit" aria-label="TAGO" />
         <view class="respond-head__spark" aria-hidden="true"><i /><i /><i /></view>
       </view>
       <text class="respond-head__title">回应TA的三个问题</text>

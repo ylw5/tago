@@ -6,7 +6,7 @@ const emit = defineEmits<{ back: [] }>()
 <template>
   <view class="paper-title">
     <button class="paper-title__back" aria-label="返回" @click="emit('back')" />
-    <image class="paper-title__logo" src="/static/illustrations/tago-wordmark.png" mode="aspectFit" aria-label="TAGO" />
+    <image class="paper-title__logo" src="/static/illustrations/tago-wordmark.webp" mode="aspectFit" aria-label="TAGO" />
     <view class="paper-title__heading">
       <text class="paper-title__title">{{ title }}</text>
       <view class="paper-title__spark" aria-hidden="true"><i /><i /><i /></view>
