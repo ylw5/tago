@@ -47,7 +47,7 @@ onLoad((query) => {
 
     <PaperTitleHeader title="选择头像" subtitle="挑一个喜欢的头像，让大家认识你" @back="goBack" />
 
-    <AsyncState :loading="loading" :error="error" :empty="!avatars.length" empty-title="暂时没有可选头像" empty-description="可以先返回，稍后再来挑选头像。" @retry="load">
+    <AsyncState class="avatar-stage" :loading="loading" :error="error" :empty="!avatars.length" empty-title="暂时没有可选头像" empty-description="可以先返回，稍后再来挑选头像。" @retry="load">
       <view class="avatar-grid">
         <view
           v-for="(avatar, index) in avatars"
@@ -82,8 +82,9 @@ $ink: #20584f;
 .scenery__cat { right:-18px; bottom:0; width:62%; }
 .scenery__note { position:absolute; bottom:70px; left:40px; color:#5f7f7a; font-size:12px; line-height:1.35; white-space:pre-line; transform:rotate(-6deg); }
 
-.avatar-grid { position:relative; z-index:2; display:grid; margin-top:22px; grid-template-columns:repeat(3,1fr); gap:14px 12px; }
-.avatar-grid__item { position:relative; width:100%; aspect-ratio:1; padding:5px; border:4px solid #fff; border-radius:50%; box-shadow:0 3px 10px rgba(60,70,50,.1); transition:transform .15s ease; }
+.avatar-stage :deep(.async-state__content) { display:flex; align-items:center; justify-content:center; }
+.avatar-grid { --avatar-size:min(132px,34vw); position:relative; z-index:2; display:grid; grid-template-columns:repeat(2,var(--avatar-size)); gap:22px 20px; }
+.avatar-grid__item { position:relative; width:var(--avatar-size); aspect-ratio:1; padding:5px; border:4px solid #fff; border-radius:50%; box-shadow:0 3px 10px rgba(60,70,50,.1); transition:transform .15s ease; }
 .avatar-grid__item .avatar-image { display:block; width:100%; height:100%; border-radius:50%; }
 .avatar-grid__item--active { border-color:#fff; box-shadow:0 0 0 3px $ink, 0 6px 14px rgba(32,88,79,.2); transform:scale(1.03); }
 .avatar-grid__check { position:absolute; right:2px; bottom:6px; width:28px; height:28px; border:3px solid #fff; border-radius:50%; background:$ink; }

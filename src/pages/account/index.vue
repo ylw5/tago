@@ -2,7 +2,8 @@
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, shallowRef } from 'vue'
 import type { AvatarDto, PublicIdentityDto } from '@/api/account'
-import { changePassword, getProfile, listAvatars, updateProfile } from '@/api/account'
+import { changePassword, displayNameIssue, getProfile, listAvatars, normalizeDisplayName, profileUpdateMessage, updateProfile } from '@/api/account'
+import { ApiError } from '@/api/client'
 import { logout, logoutAll } from '@/api/auth'
 import { closeTag, getMyTag } from '@/api/social'
 import type { TagMineDto } from '@/api/social'
@@ -74,11 +75,27 @@ async function load() {
 
 async function saveProfile() {
   if (!canSave.value || !profile.value || saving.value) return
+  const issue = displayNameIssue(displayName.value)
+  if (issue) return uni.showToast({ title: issue, icon: 'none' })
   saving.value = true
   try {
-    profile.value = await updateProfile({ displayName: displayName.value.trim(), avatarId: avatarId.value, expectedVersion: profile.value.version })
+    const updated = await updateProfile({ displayName: normalizeDisplayName(displayName.value), avatarId: avatarId.value, expectedVersion: profile.value.version })
+    profile.value = updated
+    displayName.value = updated.displayName
     uni.showToast({ title: '资料已保存', icon: 'success' })
     panel.value = 'main'
+  }
+  catch (cause) {
+    if (cause instanceof ApiError && cause.code === 'PUBLIC_IDENTITY_VERSION_CONFLICT') {
+      const typed = displayName.value
+      const identity = await getProfile().catch(() => null)
+      if (identity) {
+        profile.value = identity
+        avatarId.value = identity.avatarId
+        displayName.value = typed
+      }
+    }
+    uni.showToast({ title: profileUpdateMessage(cause), icon: 'none' })
   }
   finally { saving.value = false }
 }
@@ -160,7 +177,7 @@ function openComposer() {
 
       <view v-else-if="profile && panel === 'profile'" class="editor-paper">
         <view class="editor-paper__title"><text>公开资料</text><small>@{{ profile.publicId }}</small></view>
-        <input v-model="displayName" class="paper-input" maxlength="24" placeholder="你的昵称" />
+        <input v-model="displayName" class="paper-input" maxlength="32" placeholder="你的昵称" />
         <scroll-view scroll-x class="avatar-strip">
           <button v-for="avatar in avatars" :key="avatar.id" class="avatar-option" :class="{ 'avatar-option--active': avatarId === avatar.id }" @click="avatarId = avatar.id">
             <AvatarImage :id="avatar.id" :url="avatar.url" />

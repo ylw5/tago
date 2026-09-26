@@ -3,7 +3,8 @@ import { onLoad, onUnload } from '@dcloudio/uni-app'
 import dayjs from 'dayjs'
 import { computed, shallowRef } from 'vue'
 import type { PublicIdentityDto } from '@/api/account'
-import { getProfile, updateProfile } from '@/api/account'
+import { displayNameIssue, getProfile, normalizeDisplayName, profileUpdateMessage, updateProfile } from '@/api/account'
+import { ApiError } from '@/api/client'
 import PaperTitleHeader from '@/components/business/PaperTitleHeader.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { AVATAR_SELECTED_EVENT } from '@/utils/avatar'
@@ -15,6 +16,7 @@ type Gender = 'MALE' | 'FEMALE'
 const HOME = '/pages/discover/index'
 
 const profile = shallowRef<PublicIdentityDto | null>(null)
+const displayName = shallowRef('')
 const avatarId = shallowRef('')
 const gender = shallowRef<Gender | null>(null)
 const birthday = shallowRef('')
@@ -25,7 +27,7 @@ const onboarding = shallowRef(false)
 
 const today = dayjs().format('YYYY-MM-DD')
 const birthdayLabel = computed(() => birthday.value ? dayjs(birthday.value).format('YYYY / MM / DD') : '选择你的生日')
-const canSave = computed(() => Boolean(profile.value && avatarId.value && !saving.value))
+const canSave = computed(() => Boolean(profile.value && avatarId.value && normalizeDisplayName(displayName.value) && !saving.value))
 const genders: { id: Gender; label: string; icon: string }[] = [
   { id: 'MALE', label: '男', icon: '/static/icons/gender-male.png' },
   { id: 'FEMALE', label: '女', icon: '/static/icons/gender-female.png' },
@@ -44,6 +46,7 @@ async function load() {
   try {
     const identity = await getProfile()
     profile.value = identity
+    displayName.value = identity.displayName
     avatarId.value = identity.avatarId
     gender.value = parseGender(identity.gender)
     birthday.value = identity.birthDate || ''
@@ -68,22 +71,43 @@ function leave() {
   goBack()
 }
 
+async function refreshIdentity(keepName: string) {
+  const identity = await getProfile()
+  profile.value = identity
+  avatarId.value = identity.avatarId
+  gender.value = parseGender(identity.gender)
+  birthday.value = identity.birthDate || ''
+  displayName.value = keepName
+}
+
 async function save() {
   if (!canSave.value || !profile.value) return
+  const issue = displayNameIssue(displayName.value)
+  if (issue) {
+    uni.showToast({ title: issue, icon: 'none' })
+    return
+  }
   saving.value = true
   try {
     const identity = profile.value
-    profile.value = await updateProfile({
-      displayName: identity.displayName,
+    const updated = await updateProfile({
+      displayName: normalizeDisplayName(displayName.value),
       avatarId: avatarId.value,
       expectedVersion: identity.version,
       gender: gender.value,
       birthDate: birthday.value || null,
     })
+    profile.value = updated
+    displayName.value = updated.displayName
     uni.showToast({ title: '资料已保存', icon: 'success' })
     setTimeout(leave, 600)
   }
-  catch (cause) { uni.showToast({ title: cause instanceof Error ? cause.message : '保存失败', icon: 'none' }) }
+  catch (cause) {
+    if (cause instanceof ApiError && cause.code === 'PUBLIC_IDENTITY_VERSION_CONFLICT') {
+      await refreshIdentity(displayName.value).catch(() => {})
+    }
+    uni.showToast({ title: profileUpdateMessage(cause), icon: 'none' })
+  }
   finally { saving.value = false }
 }
 
@@ -133,8 +157,10 @@ onUnload(() => uni.$off(AVATAR_SELECTED_EVENT, onAvatarSelected))
         <view class="field">
           <text class="field__label">昵称</text>
           <view class="field__body">
-            <view class="field__input field__input--readonly">{{ profile.displayName }}</view>
-            <text class="field__hint">昵称注册后不可修改</text>
+            <view class="field__input">
+              <input v-model="displayName" class="field__control" maxlength="32" placeholder="填写你的昵称" confirm-type="done">
+            </view>
+            <text class="field__hint">最多 32 个字，不能与他人重复</text>
           </view>
         </view>
 
@@ -195,9 +221,11 @@ $navy: #1f3b5c;
 .field__label { width:48px; flex:none; padding-top:12px; color:$navy; font-size:17px; font-weight:900; letter-spacing:2px; }
 .field__body { display:flex; min-width:0; flex:1; flex-direction:column; }
 .field__body picker { width:100%; }
-.field__input { display:flex; width:100%; min-width:0; flex:1; height:48px; align-items:center; padding:0 16px; border:1px solid rgba(32,59,92,.08); border-radius:10px; background:#fff; color:$navy; font-size:16px; font-weight:700; letter-spacing:1px; }
+.field__input { display:flex; box-sizing:border-box; width:100%; min-width:0; flex:none; height:48px; min-height:48px; align-items:center; padding:0 16px; border:1px solid rgba(32,59,92,.08); border-radius:10px; background:#fff; color:$navy; font-size:16px; font-weight:700; letter-spacing:1px; }
+.field__control { width:100%; height:100%; min-height:0; padding:0; border:0; background:transparent; color:inherit; font:inherit; letter-spacing:inherit; }
+.field__input :deep(uni-input) { display:block; width:100%; height:100%; min-height:0; overflow:hidden; background:transparent; color:inherit; font:inherit; line-height:normal; letter-spacing:inherit; }
+.field__input :deep(.uni-input-placeholder) { color:#9aa19a; font-weight:500; }
 .field__input--placeholder { color:#9aa19a; font-weight:500; }
-.field__input--readonly { flex:none; background:rgba(255,255,255,.6); }
 .field__hint { margin:8px 0 0 6px; color:#7c8599; font-size:12px; }
 
 .gender { display:grid; min-width:0; flex:1; grid-template-columns:1fr 1fr; gap:10px; }
