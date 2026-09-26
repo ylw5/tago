@@ -116,6 +116,16 @@ export function listAdminGiftTiers() {
   return request<AdminGiftTierDto[]>({ path: '/v1/admin/gift-tiers' })
 }
 
+export async function hasAdminAccess() {
+  try {
+    await request<AdminGiftTierDto[]>({ path: '/v1/admin/gift-tiers', silent: true })
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
 export function upsertAdminGiftTier(code: string, body: AdminGiftTierInput) {
   return request<AdminGiftTierDto, AdminGiftTierInput>({
     path: `/v1/admin/gift-tiers/${encodeURIComponent(code)}`,

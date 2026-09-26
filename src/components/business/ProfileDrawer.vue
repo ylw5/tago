@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
+import { hasAdminAccess } from '@/api/admin'
 import { logout } from '@/api/auth'
 import { getWalletBalance } from '@/api/wallet'
 import { useUserStore } from '@/stores/user'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 
-type MenuId = 'profile' | 'wallet' | 'settings'
+type MenuId = 'profile' | 'wallet' | 'settings' | 'admin'
 
 interface Props {
   visible: boolean
@@ -23,10 +24,14 @@ const menus: { id: MenuId; title: string; url: string }[] = [
   { id: 'profile', title: '我的资料', url: '/pages/account/profile' },
   { id: 'wallet', title: '我的钱包', url: '/pages/wallet/index' },
   { id: 'settings', title: '账号设置', url: '/pages/account/index' },
+  { id: 'admin', title: '管理员工具', url: '/pages/admin/index' },
 ]
 
 const coins = shallowRef('—')
+const canAdminister = shallowRef(false)
+const visibleMenus = computed(() => menus.filter(item => item.id !== 'admin' || canAdminister.value))
 const userStore = useUserStore()
+let accessCheck = 0
 
 async function loadBalance() {
   coins.value = '—'
@@ -34,7 +39,18 @@ async function loadBalance() {
   catch { coins.value = '加载失败' }
 }
 
-watch(() => props.visible, (open) => { if (open) loadBalance() }, { immediate: true })
+async function loadAdminAccess() {
+  const check = ++accessCheck
+  canAdminister.value = false
+  const allowed = await hasAdminAccess()
+  if (check === accessCheck) canAdminister.value = allowed
+}
+
+watch(() => props.visible, (open) => {
+  if (!open) return
+  loadBalance()
+  void loadAdminAccess()
+}, { immediate: true })
 
 function go(url: string) {
   emit('close')
@@ -92,7 +108,7 @@ function signOut() {
       </view>
 
       <view class="drawer__menu">
-        <view v-for="item in menus" :key="item.id" class="drawer__item" @click="openMenu(item)">
+        <view v-for="item in visibleMenus" :key="item.id" class="drawer__item" @click="openMenu(item)">
           <image class="drawer__icon" :src="`/static/icons/menu-${item.id}.png`" mode="aspectFit" />
           <text>{{ item.title }}</text>
           <view class="drawer__chevron" />
