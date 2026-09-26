@@ -22,7 +22,7 @@ const emit = defineEmits<{ action: [tag: TagItem] }>()
 </template>
 
 <style scoped lang="scss">
-.tag-card { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; column-gap:16rpx; width:100%; min-height:104rpx; margin-bottom:6rpx; padding:10rpx 22rpx 10rpx 34rpx; overflow:visible; background:transparent; transition:transform .2s ease,filter .2s ease; }
+.tag-card { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; column-gap:16rpx; width:100%; min-height:104rpx; margin-bottom:6rpx; padding:10rpx 22rpx 10rpx 34rpx; overflow:visible; overflow-anchor:none; background:transparent; transition:transform .2s ease,filter .2s ease; }
 .tag-card:active { transform:scale(.988); }
 .tag-card::before { content:''; position:absolute; z-index:3; top:17rpx; left:12rpx; width:8rpx; height:8rpx; border-radius:50%; background:#e9bf3e; box-shadow:0 1rpx 0 rgba(255,255,255,.8); }
 .tag-card::after { content:''; position:absolute; z-index:3; top:50%; left:4rpx; width:28rpx; height:8rpx; border-radius:999rpx; background:rgba(77,94,83,.18); box-shadow:0 -13rpx 0 rgba(77,94,83,.13),0 13rpx 0 rgba(77,94,83,.13); transform:translateY(-50%) rotate(-8deg); pointer-events:none; }

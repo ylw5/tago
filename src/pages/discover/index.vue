@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { shallowRef, watch } from 'vue'
 import { AppHeader, AppTabBar, DiscoverCarousel, ExposureBidSheet, MyTagBar, PinnedTagCard, ProfileDrawer, TagCard } from '@/components/business'
 import AsyncState from '@/components/ui/AsyncState.vue'
@@ -28,6 +28,21 @@ function openTag(tag: TagItem) {
   uni.navigateTo({ url: `/pages/tag/detail?id=${encodeURIComponent(tag.id)}` })
 }
 
+onLoad((query) => {
+  if (query?.resetScroll !== '1') return
+  const pin = () => {
+    uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
+  }
+  pin()
+  requestAnimationFrame(() => {
+    pin()
+    setTimeout(() => {
+      pin()
+      if (typeof history !== 'undefined' && 'scrollRestoration' in history) history.scrollRestoration = 'auto'
+    }, 50)
+  })
+})
 onShow(load)
 </script>
 
@@ -103,7 +118,7 @@ onShow(load)
 .discover-section__refresh.is-spinning svg { animation:discover-spin .8s linear infinite; }
 .discover-section__refresh[disabled] { opacity:.7; }
 @keyframes discover-spin { to { transform:rotate(360deg); } }
-.discover-list { display:flex; flex-direction:column; transition:opacity .2s ease; }
+.discover-list { display:flex; flex-direction:column; overflow-anchor:none; transition:opacity .2s ease; }
 .discover-list :deep(.tag-card:last-child) { margin-bottom:0; }
 .discover-list--loading { opacity:.72; }
 @media (max-width:360px) {

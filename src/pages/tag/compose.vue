@@ -180,7 +180,15 @@ async function publish() {
     }
     await publishTag(value.id, { expectedVersion: value.version, ...confirmation })
     uni.showToast({ title: 'Tag 发布成功', icon: 'success' })
-    setTimeout(() => uni.reLaunch({ url: '/pages/discover/index' }), 500)
+    setTimeout(() => {
+      if (typeof history !== 'undefined' && 'scrollRestoration' in history) history.scrollRestoration = 'manual'
+      uni.reLaunch({
+        url: '/pages/discover/index?resetScroll=1',
+        complete() {
+          uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+        },
+      })
+    }, 500)
   } catch (cause) {
     const title = cause instanceof ApiError && cause.code === 'TAG_EXPOSURE_CONFIRMATION_REQUIRED'
       ? '曝光状态已变化，请再发布一次'
