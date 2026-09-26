@@ -138,7 +138,7 @@ async function executeRequest<TResponse, TBody>(
       method,
       data: options.body as UniApp.RequestOptions['data'],
       header: headers,
-      timeout: options.timeout ?? 15_000,
+      timeout: options.timeout ?? 60_000,
       withCredentials: true,
     })
   }

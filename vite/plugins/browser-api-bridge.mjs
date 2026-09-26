@@ -34,11 +34,9 @@ async function main() {
       })()
     `
     const result = await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Chrome API request timed out')), 15000)
       socket.on('message', data => {
         const message = JSON.parse(String(data))
         if (message.id !== 1) return
-        clearTimeout(timer)
         if (message.error || message.result?.exceptionDetails) reject(new Error(JSON.stringify(message.error || message.result.exceptionDetails)))
         else resolve(message.result?.result?.value)
       })

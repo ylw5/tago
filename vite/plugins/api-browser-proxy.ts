@@ -33,7 +33,7 @@ function runBridge(payload: object): Promise<BrowserFetchResult> {
     const child = spawn(process.execPath, [bridgeScript], { stdio: ['pipe', 'pipe', 'pipe'] })
     const output: Buffer[] = []
     const errors: Buffer[] = []
-    const timer = setTimeout(() => child.kill(), 20_000)
+    const timer = setTimeout(() => child.kill(), 120_000)
     child.stdout.on('data', chunk => output.push(Buffer.from(chunk)))
     child.stderr.on('data', chunk => errors.push(Buffer.from(chunk)))
     child.on('error', reject)
