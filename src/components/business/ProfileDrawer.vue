@@ -41,6 +41,14 @@ function go(url: string) {
   uni.navigateTo({ url })
 }
 
+function openMenu(item: { id: MenuId; url: string }) {
+  if (item.id === 'settings') {
+    uni.showToast({ title: '账号设置即将开放', icon: 'none' })
+    return
+  }
+  go(item.url)
+}
+
 function signOut() {
   uni.showModal({
     title: '退出登录',
@@ -84,7 +92,7 @@ function signOut() {
       </view>
 
       <view class="drawer__menu">
-        <view v-for="item in menus" :key="item.id" class="drawer__item" @click="go(item.url)">
+        <view v-for="item in menus" :key="item.id" class="drawer__item" @click="openMenu(item)">
           <image class="drawer__icon" :src="`/static/icons/menu-${item.id}.png`" mode="aspectFit" />
           <text>{{ item.title }}</text>
           <view class="drawer__chevron" />

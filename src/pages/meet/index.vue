@@ -34,8 +34,8 @@ onShow(() => { void loadApplications(); void loadChats() })
       <view class="application-entry__tape application-entry__tape--br" aria-hidden="true" />
       <image class="application-entry__art" src="/static/illustrations/recognition-envelope.png" mode="aspectFit" aria-hidden="true" />
       <view class="application-entry__copy">
-        <view class="application-entry__title"><text>有人想认识你</text><text v-if="applications.length" class="application-entry__badge">已加载 {{ applications.length }}</text></view>
-        <text class="application-entry__hint">{{ applications.length ? `查看已加载的 ${applications.length} 个认识申请` : '看看他们认真写下的回答' }}</text>
+        <view class="application-entry__title"><text>有人想认识你</text><text v-if="applications.length" class="application-entry__badge">{{ applications.length }}</text></view>
+        <text class="application-entry__hint">{{ applications.length ? `点击去查看 ${applications.length} 个新的认识申请` : '看看他们认真写下的回答' }}</text>
       </view>
       <text class="application-entry__arrow">›</text>
     </button>
@@ -81,7 +81,7 @@ onShow(() => { void loadApplications(); void loadChats() })
 .application-entry__title { display:flex; align-items:center; gap:10rpx; }
 .application-entry__title > text:first-child { font-size:28rpx; font-weight:850; letter-spacing:1rpx; }
 .application-entry__hint { overflow:hidden; color:#2f6170; font-size:19rpx; text-overflow:ellipsis; white-space:nowrap; }
-.application-entry__badge { display:grid; min-width:30rpx; height:30rpx; padding:0 8rpx; place-items:center; color:#fff; border-radius:999rpx; background:var(--tago-danger); font-size:18rpx; font-weight:850; line-height:1; }
+.application-entry__badge { display:grid; box-sizing:border-box; min-width:32rpx; height:32rpx; padding:0 6rpx; place-items:center; flex:none; color:#fff; border-radius:999rpx; background:var(--tago-danger); font-size:18rpx; font-weight:850; line-height:1; }
 .application-entry__arrow { flex:none; color:#4d5660; font-size:40rpx; line-height:1; }
 .conversation-heading { display:flex; align-items:center; min-width:0; margin:4rpx 0 12rpx; }
 .conversation-heading > image { width:64rpx; height:48rpx; flex:none; margin-left:-6rpx; }

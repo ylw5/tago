@@ -12,6 +12,8 @@ import { goBack } from '@/utils/navigation'
 
 type Gender = 'MALE' | 'FEMALE'
 
+const HOME = '/pages/discover/index'
+
 const profile = shallowRef<PublicIdentityDto | null>(null)
 const avatarId = shallowRef('')
 const gender = shallowRef<Gender | null>(null)
@@ -19,6 +21,7 @@ const birthday = shallowRef('')
 const loading = shallowRef(false)
 const saving = shallowRef(false)
 const error = shallowRef('')
+const onboarding = shallowRef(false)
 
 const today = dayjs().format('YYYY-MM-DD')
 const birthdayLabel = computed(() => birthday.value ? dayjs(birthday.value).format('YYYY / MM / DD') : '选择你的生日')
@@ -57,6 +60,14 @@ function pickAvatar() {
 
 function onBirthdayChange(event: { detail: { value: string } }) { birthday.value = event.detail.value }
 
+function leave() {
+  if (onboarding.value) {
+    uni.reLaunch({ url: HOME })
+    return
+  }
+  goBack()
+}
+
 async function save() {
   if (!canSave.value || !profile.value) return
   saving.value = true
@@ -70,13 +81,14 @@ async function save() {
       birthDate: birthday.value || null,
     })
     uni.showToast({ title: '资料已保存', icon: 'success' })
-    setTimeout(() => goBack(), 600)
+    setTimeout(leave, 600)
   }
   catch (cause) { uni.showToast({ title: cause instanceof Error ? cause.message : '保存失败', icon: 'none' }) }
   finally { saving.value = false }
 }
 
-onLoad(() => {
+onLoad((query) => {
+  onboarding.value = query?.onboarding === '1'
   uni.$on(AVATAR_SELECTED_EVENT, onAvatarSelected)
   load()
 })
@@ -95,7 +107,7 @@ onUnload(() => uni.$off(AVATAR_SELECTED_EVENT, onAvatarSelected))
       <image class="scenery__flowers" src="/static/decor/flower-corners.png" mode="widthFix" />
     </view>
 
-    <PaperTitleHeader title="我的资料" subtitle="完善你的基本信息吧" @back="goBack" />
+    <PaperTitleHeader title="我的资料" subtitle="完善你的基本信息吧" @back="leave" />
 
     <AsyncState :loading="loading" :error="error" @retry="load">
       <view v-if="profile" class="profile-sheet">

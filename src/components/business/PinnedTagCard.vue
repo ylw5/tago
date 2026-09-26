@@ -22,6 +22,11 @@ const progress = useExposureProgress()
       </view>
       <button class="pinned__participate" @click="emit('participate')"><image class="pinned__gavel" src="/static/stickers/gavel.png" mode="aspectFit" aria-hidden="true" /><text class="pinned__participate-label">参与置顶</text></button>
     </view>
+    <svg class="pinned__rays pinned__rays--corner" viewBox="0 0 12 16" aria-hidden="true"><path d="M1 3 8 1M1 8h10M1 13l7 2" /></svg>
+    <svg class="pinned__sparkles" viewBox="0 0 30 44" aria-hidden="true">
+      <path d="M11 0c1 7 3.5 9.5 10 10.5C14.5 11.5 12 14 11 21c-1-7-3.5-9.5-10-10.5C7.5 9.5 10 7 11 0Z" />
+      <path d="M22 23c.8 5.5 2.8 7.5 8 8.3-5.2.8-7.2 2.8-8 8.3-.8-5.5-2.8-7.5-8-8.3 5.2-.8 7.2-2.8 8-8.3Z" />
+    </svg>
     <view class="pinned__identity">
       <AvatarBadge size="lg" :user="tag.author" />
       <text class="pinned__name">{{ tag.author.name }}</text>
@@ -35,8 +40,13 @@ const progress = useExposureProgress()
     </view>
     <view class="pinned__footer">
       <view class="pinned__coin"><image class="pinned__coin-icon" src="/static/stickers/coin.png" mode="aspectFill" aria-hidden="true" />{{ tag.price ?? '—' }}</view>
+      <svg class="pinned__rays pinned__rays--coin" viewBox="0 0 12 16" aria-hidden="true"><path d="M1 3 8 1M1 8h10M1 13l7 2" /></svg>
       <view v-if="progress(tag) !== null" class="pinned__progress" role="progressbar" aria-label="置顶剩余时间" :aria-valuenow="Math.round(progress(tag)!)" :aria-valuemin="0" :aria-valuemax="100"><view :style="{ width: `${progress(tag)}%` }" /></view>
-      <button class="pinned__cta" @click="emit('action', tag)">去看看　→</button>
+      <view class="pinned__cta-wrap">
+        <svg class="pinned__rays pinned__rays--cta-left" viewBox="0 0 12 16" aria-hidden="true"><path d="M1 3 8 1M1 8h10M1 13l7 2" /></svg>
+        <button class="pinned__cta" @click="emit('action', tag)">去看看</button>
+        <svg class="pinned__rays pinned__rays--cta-right" viewBox="0 0 12 16" aria-hidden="true"><path d="M1 3 8 1M1 8h10M1 13l7 2" /></svg>
+      </view>
     </view>
   </view>
 </template>
@@ -68,34 +78,42 @@ const progress = useExposureProgress()
 .pinned__coin-icon { display:block; width:66rpx; height:66rpx; flex:none; }
 .pinned__progress { height:26rpx; padding:4rpx; flex:1; border:2rpx solid rgba(101,125,112,.35); border-radius:999rpx; background:rgba(255,255,255,.45); }
 .pinned__progress view { height:100%; border-radius:999rpx; background:#387b69; }
+.pinned__rays { display:block; flex:none; width:12px; height:16px; fill:none; stroke:#f2c438; stroke-width:2; stroke-linecap:round; pointer-events:none; }
+.pinned__rays--corner { position:absolute; z-index:4; top:-10px; right:-2px; transform:rotate(-35deg); }
+.pinned__rays--coin { margin-left:-2px; transform:rotate(-8deg); }
+.pinned__rays--cta-left { transform:scaleX(-1); }
+.pinned__rays--cta-right { transform:rotate(-20deg) translateY(-8px); }
+.pinned__sparkles { position:absolute; z-index:2; top:94px; left:22px; width:30px; height:44px; fill:#f4cf55; pointer-events:none; }
+.pinned__cta-wrap { display:flex; align-items:center; gap:4px; flex:none; }
 .pinned__cta { height:64rpx; padding:0 28rpx; color:white; border-radius:999rpx; background:var(--tago-primary); box-shadow:0 8rpx 18rpx rgba(32,88,79,.13); font-size:24rpx; line-height:64rpx; transition:transform .2s ease,background .2s ease; }
 .pinned__cta::after { border:0; }
 .pinned__cta:active { background:var(--tago-primary-strong); transform:translateY(1px) scale(.98); }
 
 @media (max-width:480px) {
-  .pinned { height:auto; min-height:220px; margin-top:6px; padding:20px 14px 8px; }
-  .pinned__heading { right:10px; left:10px; }
-  .pinned__label { gap:5px; padding:6px 12px 7px; font-size:16px; }
-  .pinned__crown { width:22px; height:22px; }
-  .pinned__participate { position:absolute; top:-10px; right:-5px; height:54px; padding:0 5px; }
-  .pinned__gavel { width:68px; height:68px; }
-  .pinned__participate-label { padding:4px 10px 5px; font-size:16px; font-weight:900; letter-spacing:3px; }
-  .pinned__participate-label::before { inset:1px -4px 0; }
-  .pinned__identity { gap:8px; min-height:44px; }
-  .pinned__identity :deep(.avatar--lg) { width:44px; height:44px; }
-  .pinned__name { max-width:72px; overflow:hidden; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
-  .pinned__title { margin-left:3px; padding:6px 10px; font-size:13px; }
-  .pinned__questions { margin-top:5px; margin-left:40px; padding:4px 6px; }
-  .pinned__questions > view { grid-template-columns:34px minmax(0,1fr); align-items:center; gap:5px; padding:7px 6px; border-radius:12px; font-size:11px; }
-  .pinned__questions > view + view { margin-top:5px; }
-  .pinned__q { display:grid; width:28px; height:28px; place-items:center; border-radius:50%; background:#ffedaf; font-size:14px; font-weight:800; }
-  .pinned__qa-copy { gap:2px; }
-  .pinned__question { font-size:12px; line-height:1.15; }
-  .pinned__answer { font-size:16px; line-height:1.2; }
-  .pinned__footer { gap:8px; margin-top:6px; }
-  .pinned__coin { gap:5px; font-size:22px; }
-  .pinned__coin-icon { width:32px; height:32px; }
-  .pinned__progress { height:17px; padding:2px; border-width:1px; }
-  .pinned__cta { height:36px; padding:0 18px; font-size:14px; line-height:36px; }
+  .pinned { height:auto; min-height:0; margin-top:10px; padding:34px 14px 10px; }
+  .pinned__heading { top:2px; right:4px; left:2px; }
+  .pinned__label { gap:4px; padding:4px 12px 5px 8px; font-size:14px; letter-spacing:1px; line-height:1.2; transform:rotate(-2deg); }
+  .pinned__crown { width:17px; height:17px; }
+  .pinned__participate { position:absolute; top:-14px; right:2px; height:48px; padding:0; transform:rotate(2deg); }
+  .pinned__gavel { width:56px; height:48px; margin-right:-8px; }
+  .pinned__participate-label { margin-top:10px; padding:3px 8px 4px; font-size:13px; font-weight:900; letter-spacing:1.5px; }
+  .pinned__participate-label::before { inset:0 -3px -1px; }
+  .pinned__identity { gap:10px; min-height:30px; padding-left:52px; }
+  .pinned__identity :deep(.avatar--lg) { position:absolute; top:-4px; left:0; width:44px; height:44px; }
+  .pinned__name { max-width:72px; overflow:hidden; font-size:15px; text-overflow:ellipsis; white-space:nowrap; }
+  .pinned__title { padding:4px 12px; border-radius:8px; background:rgba(250,222,120,.62); font-size:18px; font-weight:800; }
+  .pinned__questions { margin-top:4px; margin-left:52px; padding:0; }
+  .pinned__questions > view { grid-template-columns:30px minmax(0,1fr); align-items:center; gap:8px; padding:4px 8px 4px 4px; border-radius:8px; background:rgba(255,255,255,.55); }
+  .pinned__questions > view + view { margin-top:4px; }
+  .pinned__q { display:grid; width:30px; height:19px; place-items:center; border-radius:8px; background:#fde8a4; color:#2c2a22; font-size:12px; font-weight:800; font-style:italic; }
+  .pinned__qa-copy { gap:1px; }
+  .pinned__question { color:#8b8a80; font-size:10px; line-height:1.2; }
+  .pinned__answer { color:#1d2622; font-size:15px; line-height:1.25; }
+  .pinned__footer { gap:6px; margin-top:8px; }
+  .pinned__coin { gap:4px; color:#9a4a22; font-size:20px; }
+  .pinned__coin-icon { width:34px; height:34px; }
+  .pinned__progress { height:14px; padding:2px; border-width:1px; background:rgba(255,255,255,.6); }
+  .pinned__progress view { background:repeating-linear-gradient(100deg,#3f7a5c 0 6px,#467f61 6px 9px); }
+  .pinned__cta { height:30px; padding:0 20px; background:#2e5b4d; font-size:15px; letter-spacing:1px; line-height:30px; }
 }
 </style>

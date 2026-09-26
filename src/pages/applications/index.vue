@@ -31,10 +31,10 @@ onShow(load)
         <view class="applications-summary__tape applications-summary__tape--br" aria-hidden="true" />
         <view class="applications-summary__envelope" aria-hidden="true">
           <image src="/static/illustrations/recognition-envelope.png" mode="aspectFit" />
-          <text class="applications-summary__badge">已加载 {{ applications.length }}</text>
+          <text class="applications-summary__badge">{{ applications.length }}</text>
         </view>
         <view class="applications-summary__copy">
-          <view class="applications-summary__title"><text>已加载</text><text class="applications-summary__count">{{ applications.length }}</text><text>个新的认识申请</text></view>
+          <view class="applications-summary__title"><text>你有</text><text class="applications-summary__count">{{ applications.length }}</text><text>个新的认识申请</text></view>
           <text class="applications-summary__hint">不同的兴趣与故事，正在期待你的回应～</text>
         </view>
         <view class="applications-summary__note"><text>慢慢看，</text><text>总会遇到对的人 ♡</text></view>
@@ -57,7 +57,7 @@ onShow(load)
 .applications-summary__tape--br { right:-14rpx; bottom:-4rpx; transform:rotate(-36deg); }
 .applications-summary__envelope { position:relative; width:84rpx; height:70rpx; flex:none; }
 .applications-summary__envelope image { width:100%; height:100%; }
-.applications-summary__badge { position:absolute; top:-6rpx; right:-6rpx; display:grid; min-width:30rpx; height:30rpx; padding:0 8rpx; place-items:center; color:#fff; border:2rpx solid #fff; border-radius:999rpx; background:var(--tago-danger); font-size:18rpx; font-weight:850; line-height:1; }
+.applications-summary__badge { position:absolute; top:-8rpx; right:-6rpx; display:grid; box-sizing:border-box; min-width:34rpx; height:34rpx; padding:0 6rpx; place-items:center; color:#fff; border:2rpx solid #fff; border-radius:999rpx; background:var(--tago-danger); font-size:18rpx; font-weight:850; line-height:1; }
 .applications-summary__copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:8rpx; }
 .applications-summary__title { display:flex; align-items:baseline; gap:8rpx; color:var(--tago-ink); font-size:27rpx; font-weight:850; white-space:nowrap; }
 .applications-summary__count { color:var(--tago-primary); font-size:36rpx; font-weight:900; line-height:1; }

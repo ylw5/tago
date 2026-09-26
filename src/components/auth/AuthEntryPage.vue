@@ -18,8 +18,11 @@ const activeMode = shallowRef<AuthMode>(props.initialMode)
 const title = computed(() => activeMode.value === 'login' ? '登录你的账号' : '创建你的账号')
 const subtitle = computed(() => activeMode.value === 'login' ? '继续更多有趣的相遇' : '开启更多有趣的相遇')
 
+const PROFILE_ONBOARDING = '/pages/account/profile?onboarding=1'
+
 const loginFlow = useAuthFlow()
 const registerFlow = useAuthFlow('register')
+const needsProfile = shallowRef(false)
 
 const agreed = registerFlow.agreementAccepted
 const agreementOpen = shallowRef(false)
@@ -46,13 +49,14 @@ function selectMode(mode: AuthMode) {
 }
 function goBack() { uni.redirectTo({ url: '/pages/auth/welcome' }) }
 function openReset() { uni.navigateTo({ url: '/pages/auth/reset' }) }
+function enterApp() { uni.reLaunch({ url: needsProfile.value ? PROFILE_ONBOARDING : props.redirect }) }
 
 async function submitLogin() {
-  if (await loginFlow.signIn()) uni.reLaunch({ url: props.redirect })
+  if (await loginFlow.signIn()) enterApp()
 }
 
 async function confirmRecovery() {
-  if (await loginFlow.recover()) uni.reLaunch({ url: props.redirect })
+  if (await loginFlow.recover()) enterApp()
 }
 
 function toggleAgree() {
@@ -77,6 +81,7 @@ async function submitRegister() {
     return
   }
   if (!await registerFlow.verify()) return
+  needsProfile.value = true
   if (registerFlow.loginRequired.value) {
     const email = registerFlow.form.email
     selectMode('login')
@@ -84,7 +89,7 @@ async function submitRegister() {
     uni.showToast({ title: '注册成功，请登录', icon: 'none' })
     return
   }
-  uni.reLaunch({ url: props.redirect })
+  enterApp()
 }
 </script>
 
