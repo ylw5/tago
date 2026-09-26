@@ -9,7 +9,7 @@ export function avatarSpriteStyle(id?: string | null) {
   const index = avatarIndex(id)
   if (index === null) return null
   return {
-    backgroundImage: 'url(/static/avatars/product-sprite.png)',
+    backgroundImage: 'url(/static/avatars/product-sprite.webp)',
     backgroundSize: '300% 300%',
     backgroundPosition: `${(index % 3) * 50}% ${Math.floor(index / 3) * 50}%`,
   }
