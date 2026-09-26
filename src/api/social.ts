@@ -71,9 +71,34 @@ export function savePublisherAnswer(tagId: string, slot: number, body: component
   })
 }
 
-export function publishTag(tagId: string, expectedVersion: number) {
-  return request<TagDto, components['schemas']['ExpectedVersion']>({
-    path: `/v1/tags/${tagId}/publish`, method: 'POST', body: { expectedVersion }, idempotent: true,
+export interface ExposureImpact {
+  entitlementId: string
+  tagId: string
+  state: string
+  paidCoin: number
+  expiresAt: string
+}
+
+export interface PublishImpact {
+  draftTagId: string
+  previousActiveTagId: string | null
+  openEntitlements: ExposureImpact[]
+  confirmationRequired: boolean
+}
+
+export interface PublishTagBody {
+  expectedVersion: number
+  expectedPreviousActiveTagId?: string | null
+  confirmedEntitlementIds?: string[]
+}
+
+export function getPublishImpact(tagId: string) {
+  return request<PublishImpact>({ path: `/v1/tags/${tagId}/publish-impact`, silent: true })
+}
+
+export function publishTag(tagId: string, body: PublishTagBody) {
+  return request<TagDto, PublishTagBody>({
+    path: `/v1/tags/${tagId}/publish`, method: 'POST', body, idempotent: true, silent: true,
   })
 }
 

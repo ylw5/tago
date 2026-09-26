@@ -32,7 +32,7 @@ const progress = useExposureProgress()
         <AvatarBadge size="lg" :user="tag.author" />
         <text class="pinned__name">{{ tag.author.name }}</text>
       </view>
-      <text class="pinned__title">{{ tag.title }}</text>
+      <view class="pinned__title-wrap"><text class="pinned__title">{{ tag.title }}</text></view>
     </view>
     <view class="pinned__questions">
       <view v-for="(item,index) in (tag.questions || []).slice(0, 3)" :key="item.id">
@@ -67,7 +67,8 @@ const progress = useExposureProgress()
 .pinned__identity { position:relative; z-index:2; display:flex; align-items:flex-start; gap:12rpx; min-height:82rpx; }
 .pinned__person { display:flex; width:88rpx; flex:none; flex-direction:column; align-items:center; gap:6rpx; }
 .pinned__name { max-width:100%; overflow:hidden; color:var(--tago-ink); font-size:20rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
-.pinned__title { min-width:0; max-width:100%; overflow:hidden; padding:7rpx 14rpx; border-radius:22rpx; background:rgba(250,220,112,.8); color:#242820; font-size:27rpx; font-weight:700; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
+.pinned__title-wrap { display:flex; min-width:0; flex:1; align-items:center; }
+.pinned__title { display:-webkit-box; width:fit-content; max-width:100%; overflow:hidden; padding:7rpx 14rpx; border-radius:22rpx; background:rgba(250,220,112,.8); color:#242820; font-size:27rpx; font-weight:700; line-height:1.35; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .pinned__questions { position:relative; z-index:2; display:flex; min-width:0; padding:5rpx 8rpx; flex-direction:column; }
 .pinned__questions > view { display:grid; grid-template-columns:44rpx 1fr; gap:4rpx; min-width:0; padding:5rpx 9rpx; border-radius:14rpx; background:rgba(255,255,255,.76); color:#514f46; font-size:17rpx; line-height:1.24; }
 .pinned__questions > view + view { margin-top:8rpx; }
@@ -105,7 +106,7 @@ const progress = useExposureProgress()
   .pinned__person { position:absolute; top:-4px; left:0; width:44px; gap:2px; }
   .pinned__identity :deep(.avatar--lg) { width:44px; height:44px; }
   .pinned__name { font-size:10px; }
-  .pinned__title { padding:4px 12px; border-radius:8px; background:rgba(250,222,120,.62); font-size:18px; font-weight:800; }
+  .pinned__title { padding:4px 12px; border-radius:8px; background:rgba(250,222,120,.62); font-size:18px; font-weight:800; line-height:1.35; }
   .pinned__questions { margin-top:4px; margin-left:52px; padding:0; }
   .pinned__questions > view { grid-template-columns:30px minmax(0,1fr); align-items:center; gap:8px; padding:4px 8px 4px 4px; border-radius:8px; background:rgba(255,255,255,.55); }
   .pinned__questions > view + view { margin-top:4px; }

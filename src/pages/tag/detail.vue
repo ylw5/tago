@@ -76,7 +76,7 @@ onLoad(query => {
         </view>
 
         <view class="topic">
-          <text class="topic__tag"># {{ tag.body }}</text>
+          <view class="topic__tag"># {{ tag.body }}</view>
           <view class="topic__meta">
             <text>{{ encounterLabel }}</text>
             <text>{{ durationLabel(tag.duration) }}</text>
@@ -194,7 +194,7 @@ $muted: #56677d;
 .topic {
   position: relative;
   margin-top: 12px;
-  padding: 14px 76px 14px 14px;
+  padding: 14px;
   border-radius: 6px 12px 8px 10px;
   background:
     repeating-linear-gradient(118deg, rgba(255, 255, 255, .18) 0 2px, transparent 2px 9px),
@@ -202,18 +202,17 @@ $muted: #56677d;
   box-shadow: 0 4px 12px rgba(39, 68, 56, .06);
 }
 .topic__tag {
-  display: inline;
-  padding: 3px 10px;
-  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px 18px 14px 16px;
   background: #f6dc8c;
   color: #3a3220;
   font-size: 18px;
   font-weight: 900;
-  line-height: 1.9;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  line-height: 1.45;
 }
-.topic__meta { display: flex; gap: 8px; margin-top: 10px; }
+.topic__meta { display: flex; gap: 8px; margin-top: 10px; padding-right: 62px; }
 .topic__meta text { padding: 2px 10px; border: 1px solid rgba(36, 73, 63, .18); border-radius: 999px; background: rgba(255, 255, 255, .55); color: #24493f; font-size: 12px; font-weight: 700; }
 .topic__cat { position: absolute; right: 6px; bottom: 6px; width: 66px; height: 34px; }
 

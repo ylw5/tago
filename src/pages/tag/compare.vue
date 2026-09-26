@@ -216,20 +216,19 @@ $paper-yellow: #fbefc7;
 .tag-card__title {
   position:relative;
   z-index:1;
+  width:fit-content;
   max-width:calc(100% - 170rpx);
   margin:8rpx 0 12rpx;
+  padding:6rpx 14rpx;
+  border-radius:12rpx 18rpx 14rpx 16rpx;
+  background:$marker-yellow;
 }
 .tag-card__title text {
-  padding:2rpx 12rpx;
-  background:linear-gradient(180deg, transparent 18%, $marker-yellow 18%, $marker-yellow 88%, transparent 88%);
-  border-radius:6rpx 14rpx 8rpx 16rpx;
   font-size:44rpx;
   font-weight:900;
-  line-height:1.5;
+  line-height:1.45;
   letter-spacing:1rpx;
   overflow-wrap:anywhere;
-  -webkit-box-decoration-break:clone;
-  box-decoration-break:clone;
 }
 .tag-card__note {
   position:relative;

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, reactive, shallowRef } from 'vue'
-import type { TagDto } from '@/api/social'
-import { closeTag, createTag, editTagBody, generateTagQuestions, getMyTag, publishTag, refreshTagQuestion, savePublisherAnswer } from '@/api/social'
+import { ApiError } from '@/api/client'
+import type { ExposureImpact, TagDto } from '@/api/social'
+import { closeTag, createTag, editTagBody, generateTagQuestions, getMyTag, getPublishImpact, publishTag, refreshTagQuestion, savePublisherAnswer } from '@/api/social'
 import AppHeader from '@/components/business/AppHeader.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { goBack } from '@/utils/navigation'
@@ -127,6 +128,28 @@ function sameQuestions(tag: TagDto) {
   return shown.length === next.length && shown.every((q, index) => q.slot === next[index].slot && q.text === next[index].text)
 }
 
+function exposureEndCopy(entitlements: ExposureImpact[]) {
+  const coins = entitlements.reduce((sum, item) => sum + Number(item.paidCoin || 0), 0)
+  const states = new Set(entitlements.map(item => item.state))
+  const label = states.has('TOP') && states.has('CAROUSEL') ? '置顶和轮播' : states.has('CAROUSEL') ? '轮播' : '置顶'
+  const count = entitlements.length > 1 ? ` ${entitlements.length} 项` : ''
+  return `重新发布会替换当前 Tag，并结束仍在进行的${count}${label}（已花费 ${coins} 星币）。`
+}
+
+function confirmExposureEnd(entitlements: ExposureImpact[]) {
+  return new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: '结束当前曝光？',
+      content: exposureEndCopy(entitlements),
+      cancelText: '再想想',
+      confirmText: '继续发布',
+      confirmColor: '#20584f',
+      success: ({ confirm }) => resolve(Boolean(confirm)),
+      fail: () => resolve(false),
+    })
+  })
+}
+
 async function publish() {
   if (!canPublish.value || !source.value || working.value) return
   working.value = true
@@ -143,11 +166,26 @@ async function publish() {
       if (!text) throw new Error('请先回答三道问题')
       value = await savePublisherAnswer(value.id, q.slot, { expectedVersion: value.version, questionVersion: q.questionVersion, text })
     }
-    await publishTag(value.id, value.version)
+    const impact = await getPublishImpact(value.id)
+    const confirmation = impact.confirmationRequired
+      ? {
+          expectedPreviousActiveTagId: impact.previousActiveTagId,
+          confirmedEntitlementIds: impact.openEntitlements.map(item => item.entitlementId),
+        }
+      : {}
+    if (impact.confirmationRequired) {
+      if (!impact.previousActiveTagId || !confirmation.confirmedEntitlementIds?.length) throw new Error('无法确认当前曝光，请稍后重试')
+      const confirmed = await confirmExposureEnd(impact.openEntitlements)
+      if (!confirmed) return
+    }
+    await publishTag(value.id, { expectedVersion: value.version, ...confirmation })
     uni.showToast({ title: 'Tag 发布成功', icon: 'success' })
     setTimeout(() => uni.reLaunch({ url: '/pages/discover/index' }), 500)
   } catch (cause) {
-    uni.showToast({ title: cause instanceof Error ? cause.message : '发布失败', icon: 'none' })
+    const title = cause instanceof ApiError && cause.code === 'TAG_EXPOSURE_CONFIRMATION_REQUIRED'
+      ? '曝光状态已变化，请再发布一次'
+      : cause instanceof Error ? cause.message : '发布失败'
+    uni.showToast({ title, icon: 'none' })
   } finally {
     working.value = false
   }
