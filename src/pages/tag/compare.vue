@@ -11,7 +11,12 @@ import { goBack } from '@/utils/navigation'
 const application=shallowRef<ApplicationDto|null>(null),loading=shallowRef(true),working=shallowRef(false),error=shallowRef('')
 const myPublicId=shallowRef('')
 const isPublisher=computed(()=>Boolean(application.value&&myPublicId.value===application.value.publisherIdentity.publicId))
-const statusLabel=computed(()=>{const state=application.value?.state;if(state==='PENDING')return'等待对方回应';return `当前申请状态：${({ACCEPTED:'已接受',REJECTED:'已婉拒',EXPIRED:'已过期'} as Record<string,string>)[state||'']||'已结束'}`})
+const counterparty=computed(()=>{const item=application.value;if(!item)return null;return isPublisher.value?item.applicantIdentity:item.publisherIdentity})
+const relationNote=computed(()=>isPublisher.value?'TA 想因为这个 Tag 认识你':'你想因为这个 Tag 认识 TA')
+const pageSubtitle=computed(()=>{const state=application.value?.state;if(!application.value)return'看看这次认真写下的回答';if(isPublisher.value)return'一个有趣的人，想和你聊聊这个 Tag！';if(state==='ACCEPTED')return'对方接受了这次认识';if(state!=='PENDING')return'这次申请已经结束了';return'你发出的申请，正在等对方看看'})
+const canDecide=computed(()=>application.value?.state==='PENDING'&&isPublisher.value)
+const canOpenChat=computed(()=>application.value?.state==='ACCEPTED'&&Boolean(application.value.conversationId))
+const statusLabel=computed(()=>{const state=application.value?.state;if(!isPublisher.value){if(state==='PENDING')return'等待对方回应';if(state==='ACCEPTED')return'已经认识';return'本次申请已结束'};return ({ACCEPTED:'已接受',REJECTED:'已婉拒',EXPIRED:'已过期'} as Record<string,string>)[state||'']||'已结束'})
 const rows=computed(()=>{
   const item=application.value
   if(!item)return[]
@@ -32,11 +37,12 @@ const rows=computed(()=>{
 async function load(id:string){loading.value=true;error.value='';try{const [item,profile]=await Promise.all([getApplication(id),getProfile()]);application.value=item;myPublicId.value=profile.publicId}catch(cause){error.value=cause instanceof Error?cause.message:'申请详情加载失败'}finally{loading.value=false}}
 async function accept(){if(!application.value||!isPublisher.value)return;working.value=true;try{const result=await acceptApplication(application.value.id);uni.redirectTo({url:`/pages/chat/index?id=${encodeURIComponent(result.conversationId)}`})}catch(cause){uni.showToast({title:cause instanceof Error?cause.message:'接受失败',icon:'none'})}finally{working.value=false}}
 async function reject(){if(!application.value||!isPublisher.value)return;working.value=true;try{application.value=await rejectApplication(application.value.id);uni.showToast({title:'已婉拒这次申请',icon:'none'})}catch(cause){uni.showToast({title:cause instanceof Error?cause.message:'拒绝失败',icon:'none'})}finally{working.value=false}}
+function openChat(){const id=application.value?.conversationId;if(id)uni.navigateTo({url:`/pages/chat/index?id=${encodeURIComponent(id)}`})}
 onLoad(q=>{const id=typeof q?.id==='string'?q.id:'';if(id)load(id);else{loading.value=false;error.value='缺少申请 ID'}})
 </script>
 <template>
   <view class="tago-page tago-page--detail compare-page">
-    <AppHeader class="compare-header" back title="认识申请" subtitle="一个有趣的人，想和你聊聊这个 Tag！" @back="goBack" />
+    <AppHeader class="compare-header" back title="认识申请" :subtitle="pageSubtitle" @back="goBack" />
     <view class="compare-slogan" aria-hidden="true">
       <text>好的相遇</text>
       <text>从一个共同的兴趣开始</text>
@@ -46,11 +52,11 @@ onLoad(q=>{const id=typeof q?.id==='string'?q.id:'';if(id)load(id);else{loading.
       <section v-if="application" class="tag-card">
         <view class="tag-card__profile">
           <view class="tag-card__avatar">
-            <AvatarImage :id="application.applicantIdentity.avatarId" />
+            <AvatarImage :id="counterparty?.avatarId" />
           </view>
           <view class="tag-card__identity">
-            <b>{{ application.applicantIdentity.displayName }}</b>
-            <small>TA 想因为这个 Tag 认识你</small>
+            <b>{{ counterparty?.displayName }}</b>
+            <small>{{ relationNote }}</small>
           </view>
         </view>
         <view class="tag-card__aside" aria-hidden="true">
@@ -85,12 +91,13 @@ onLoad(q=>{const id=typeof q?.id==='string'?q.id:'';if(id)load(id);else{loading.
           </view>
         </article>
       </section>
-      <view v-if="application?.state === 'PENDING' && isPublisher" class="actions">
+      <view v-if="canDecide" class="actions">
         <button class="decline" :disabled="working" @click="reject">暂时不了</button>
         <button class="accept" :loading="working" @click="accept">认识 TA</button>
       </view>
+      <button v-else-if="canOpenChat" class="chat-link" @click="openChat">去聊天</button>
       <view v-else-if="application" class="finished">{{ statusLabel }}</view>
-      <text v-if="application?.state === 'PENDING' && isPublisher" class="closing-note">或许这会是一段有趣的相遇 ☺</text>
+      <text v-if="canDecide" class="closing-note">或许这会是一段有趣的相遇 ☺</text>
     </AsyncState>
   </view>
 </template>
@@ -306,6 +313,8 @@ $paper-yellow: #fbefc7;
 .decline { color:var(--tago-primary); border:2rpx solid var(--tago-primary); background:rgba(255,255,255,.7); }
 .accept { color:#fff; background:var(--tago-primary); box-shadow:0 8rpx 18rpx rgba(32,88,79,.2); }
 .closing-note { display:block; margin-top:4rpx; color:var(--tago-muted); font-size:20rpx; text-align:center; }
+.chat-link { display:block; width:62%; max-width:420rpx; height:80rpx; margin:20rpx auto 8rpx; color:#fff; border-radius:999rpx; background:var(--tago-primary); box-shadow:0 8rpx 18rpx rgba(32,88,79,.2); font-size:29rpx; font-weight:700; line-height:80rpx; }
+.chat-link::after { border:0; }
 .finished { margin:25rpx; padding:22rpx; color:var(--tago-muted); text-align:center; }
 
 @media(max-width:360px) {

@@ -23,6 +23,9 @@ declare module 'tinode-sdk' {
     read?:number
     recv?:number
     deleted?:Date|string
+    _attached?:boolean
+    latestMessage(): TinodeMessage | undefined
+    startMetaQuery(): { withData(since?:number, before?:number, limit?:number): { build(): unknown } }
     onAllMessagesReceived?: (count:number)=>void
     getMeta(query:unknown): Promise<unknown>
     onMetaSub?: (contact:TinodeTopic)=>void

@@ -1,6 +1,7 @@
 import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import type { Tinode, TinodeMessage, TinodeTopic } from 'tinode-sdk'
-import { ensureTinodeSession, tinodeSession, syncTinodeUnread, withChatTimeout } from './useTinodeSession'
+import { claimConversationTopic, ensureTinodeSession, noteTinodePreview, releaseConversationTopic, tinodeSession, syncTinodeUnread, withChatTimeout } from './useTinodeSession'
+import { messagePreviewText } from '@/api/adapters'
 import { createConversationConnection, getChatDetail, getEncounterDetail, listEncounters } from '@/api/chat'
 import type { ConversationDetailDto, EncounterDetailDto } from '@/api/chat'
 
@@ -17,7 +18,11 @@ export function useTinodeConversation() {
   function release(){
     revision++
     const previous=topic
+    const handle=activeTopicHandle
     topic=null;activeTopicHandle=null;connected.value=false;connecting.value=false
+    releaseConversationTopic(handle)
+    releaseConversationTopic(previous?.name)
+    releaseConversationTopic(previous?.topic)
     if(previous){previous.onData=undefined;previous.onInfo=undefined;previous.onMetaSub=undefined;previous.onAllMessagesReceived=undefined;leaving=previous.leave(false).catch(()=>{})}
   }
   function hide(){visible=false;release()}
@@ -29,9 +34,8 @@ export function useTinodeConversation() {
     if(visible&&currentConversation&&!connecting.value)show()
   },{flush:'sync'})
 
-  function textOf(message?:TinodeMessage){return !message?'':typeof message.content==='string'?message.content:message.content?.txt||''}
   function readByPeer(sequence:number){try{return (topic?.msgReadCount(sequence)||0)>0}catch{return false}}
-  function ingest(message?:TinodeMessage){const text=textOf(message);if(!message||!text)return;const sequence=message.seq||Date.now();const mine=message.from===me;const item:LiveMessage={id:String(sequence),sequence,text,mine,read:mine&&readByPeer(sequence),time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence);if(!mine&&message.seq)markRead(message.seq)}
+  function ingest(message?:TinodeMessage){const text=messagePreviewText(message?.content);if(!message||!text)return;const sequence=message.seq||Date.now();const mine=message.from===me;const item:LiveMessage={id:String(sequence),sequence,text,mine,read:mine&&readByPeer(sequence),time:new Date(message.ts||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const next=messages.value.filter(existing=>existing.id!==item.id);next.push(item);messages.value=next.sort((a,b)=>a.sequence-b.sequence);noteTinodePreview(topic?.name||topic?.topic||activeTopicHandle,message);if(!mine&&message.seq)markRead(message.seq)}
   function refreshReadState(){messages.value=messages.value.map(item=>item.mine?{...item,read:readByPeer(item.sequence)}:item)}
   function connect(conversationId:string){
     const task=topicWork.catch(()=>{}).then(()=>{if(visible&&currentConversation===conversationId)return attach(conversationId)})
@@ -57,13 +61,22 @@ export function useTinodeConversation() {
       const activeTopic=tinode.getTopic(conversation.topicHandle)
       topic=activeTopic
       activeTopicHandle=conversation.topicHandle
+      claimConversationTopic(conversation.topicHandle)
+      claimConversationTopic(activeTopic.name)
+      claimConversationTopic(activeTopic.topic)
       activeTopic.onData=ingest
       activeTopic.onInfo=info=>{if(info.what==='read')refreshReadState()}
       activeTopic.onMetaSub=refreshReadState
       // SDK 0.25.3 会用历史消息模拟 read 通知，覆盖订阅中的对方已读序号；历史收完后重新取服务端状态。
       activeTopic.onAllMessagesReceived=()=>{void activeTopic.getMeta({what:'sub'}).catch(()=>{})}
-      // sub 元数据携带对方的 read 序号，用于展示「已读」。
-      await withChatTimeout(activeTopic.subscribe({what:'sub data',data:{limit:50}}))
+      // 列表预览可能刚用 limit:1 订阅过；已挂上时先离开，再按完整历史订阅。SDK 在已订阅时会直接返回 topic 本身。
+      const historyQuery={what:'sub data',data:{limit:50}}
+      for(let join=0;join<2&&attempt===revision&&visible;join+=1){
+        if(activeTopic._attached)await activeTopic.leave(false).catch(()=>{})
+        if(attempt!==revision||!visible)break
+        const joined=await withChatTimeout(activeTopic.subscribe(historyQuery))
+        if(joined!==activeTopic)break
+      }
       if(attempt!==revision||!visible){activeTopic.onData=undefined;activeTopic.onInfo=undefined;activeTopic.onMetaSub=undefined;activeTopic.onAllMessagesReceived=undefined;await activeTopic.leave(false).catch(()=>{});return}
       const history:TinodeMessage[]=[]
       activeTopic.messages(message=>history.push(message))

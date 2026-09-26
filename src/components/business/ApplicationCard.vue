@@ -3,11 +3,18 @@ import { computed } from 'vue'
 import type { ApplicationItem } from '@/types/models'
 import AvatarBadge from './AvatarBadge.vue'
 const props = defineProps<{ application: ApplicationItem }>()
-const emit = defineEmits<{ accept:[id:string]; decline:[id:string]; detail:[id:string] }>()
+const emit = defineEmits<{ accept:[id:string]; decline:[id:string]; detail:[id:string]; chat:[id:string] }>()
+const outgoing = computed(() => props.application.direction === 'outgoing')
+const person = computed(() => props.application.peer || props.application.applicant)
+const statusLabel = computed(() => {
+  if (props.application.state === 'PENDING') return '等待回应'
+  if (props.application.state === 'ACCEPTED') return '已经认识'
+  return '本次申请已结束'
+})
 // 后端没有独立附言字段，message 取自第一条回答；与 Q1 重复时不再单独展示
 const showMessage = computed(() => Boolean(props.application.message) && props.application.message !== props.application.answers[0]?.answer)
 const artSource = computed(() => props.application.tone === 'blue' ? '/static/decor/leaf-branch.png' : '/static/decor/leaf-sprig.png')
-const metaLabel = computed(() => [props.application.applicant.city, props.application.timeLabel].filter(Boolean).join(' · '))
+const metaLabel = computed(() => [person.value.city, props.application.timeLabel].filter(Boolean).join(' · '))
 </script>
 
 <template>
@@ -20,16 +27,16 @@ const metaLabel = computed(() => [props.application.applicant.city, props.applic
       <image class="application__leaf" :src="artSource" mode="aspectFit" />
     </view>
     <view class="application__head">
-      <AvatarBadge class="application__avatar" :user="application.applicant" size="lg" />
+      <AvatarBadge class="application__avatar" :user="person" size="lg" />
       <view class="application__identity">
-        <text class="application__name">{{ application.applicant.name }}</text>
+        <text class="application__name">{{ person.name }}</text>
         <text class="application__meta">{{ metaLabel }}</text>
       </view>
       <view class="application__story">
         <view class="application__tag">
-          <text class="application__reason-prefix">TA 想因为</text>
+          <text class="application__reason-prefix">{{ outgoing ? '你想因为' : 'TA 想因为' }}</text>
           <text class="application__reason">{{ application.tagTitle }}</text>
-          <text class="application__known">认识你</text>
+          <text class="application__known">{{ outgoing ? '认识 TA' : '认识你' }}</text>
         </view>
         <text v-if="showMessage" class="application__message">{{ application.message }}</text>
       </view>
@@ -40,7 +47,12 @@ const metaLabel = computed(() => [props.application.applicant.city, props.applic
         <text class="application__a">A：{{ item.answer }}</text>
       </view>
     </view>
-    <view class="application__actions">
+    <view v-if="outgoing" class="application__actions">
+      <button class="application__detail" @click="emit('detail',application.id)">看看回答 →</button>
+      <button v-if="application.state === 'ACCEPTED' && application.conversationId" class="application__accept" @click="emit('chat', application.conversationId)">去聊天</button>
+      <text v-else class="application__status" :class="`application__status--${application.state.toLowerCase()}`">{{ statusLabel }}</text>
+    </view>
+    <view v-else class="application__actions">
       <button class="application__detail" @click="emit('detail',application.id)">看看TA →</button>
       <view class="application__decision">
         <button class="application__accept" data-testid="accept-button" @click="emit('accept',application.id)"><text class="application__heart">♥</text>接受认识</button>
@@ -159,4 +171,8 @@ const metaLabel = computed(() => [props.application.applicant.city, props.applic
 .application__accept { display:flex; width:216rpx; align-items:center; justify-content:center; gap:10rpx; color:#fff; background:var(--tago-primary); font-weight:800; box-shadow:0 6rpx 14rpx rgba(32,88,79,.2); }
 .application__heart { font-size:26rpx; }
 .application__decline { width:144rpx; color:#4b534d; border:1rpx solid rgba(32,88,79,.14); background:rgba(255,254,248,.78); }
+.application__status { display:inline-flex; align-items:center; height:64rpx; padding:0 22rpx; border-radius:999rpx; font-size:22rpx; font-weight:800; }
+.application__status--pending { color:#8a6414; background:rgba(243,215,122,.75); }
+.application__status--accepted { color:var(--tago-primary); background:rgba(211,232,204,.95); }
+.application__status--rejected, .application__status--expired { color:#6b726b; background:rgba(255,254,248,.78); }
 </style>

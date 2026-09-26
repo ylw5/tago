@@ -107,10 +107,16 @@ export function tagDtoToTag(item: TagDto): TagItem {
   }
 }
 
-export function applicationDtoToItem(item: ApplicationDto, index: number): ApplicationItem {
+export function applicationDtoToItem(item: ApplicationDto, index: number, direction: 'incoming' | 'outgoing' = 'incoming'): ApplicationItem {
   const questions = new Map(item.questions.map(question => [question.slot, question.text]))
+  const peerIdentity = direction === 'outgoing' ? item.publisherIdentity : item.applicantIdentity
+  const peerFallback = direction === 'outgoing' ? `api-publisher-${item.publisherId}` : `api-application-${item.applicantId}`
   return {
     id: item.id,
+    direction,
+    state: item.state,
+    conversationId: item.conversationId,
+    peer: identityToUser(peerIdentity, peerFallback),
     applicant: identityToUser(item.applicantIdentity, `api-application-${item.applicantId}`),
     tagTitle: item.tag.body.startsWith('#') ? item.tag.body : `# ${item.tag.body}`,
     message: item.applicantAnswers[0]?.text || '',
@@ -148,11 +154,39 @@ export function conversationDtoToItem(
     tagTitle,
     reasonTag,
     preview: item.lastMessagePreview?.text?.trim() || options?.meta?.preview || fallbackPreview,
+    previewSeq: Number(item.lastMessagePreview?.sourceSeq || item.activity?.lastMessageSeq || 0),
     timeLabel: chatTimeLabel(lastActiveAt),
     lastActiveAt,
     unread: options?.meta?.unread || 0,
     marker: options?.meta?.marker || item.summary?.text?.trim() || undefined,
   }
+}
+
+export interface LivePreview {
+  text: string
+  sentAt: string
+  seq: number
+}
+
+/** 纯文本或 Drafty 消息里能展示在列表上的正文。 */
+export function messagePreviewText(content?: string | { txt?: string } | null) {
+  if (typeof content === 'string') return content.trim()
+  return content?.txt?.trim() || ''
+}
+
+export function livePreviewFromMessage(message?: { seq?: number, ts?: Date | string, content?: string | { txt?: string } | null }): LivePreview | null {
+  const text = messagePreviewText(message?.content)
+  const seq = message?.seq
+  if (!text || !seq || seq <= 0) return null
+  const time = message?.ts ? new Date(message.ts) : new Date()
+  return { text, sentAt: Number.isNaN(time.getTime()) ? new Date().toISOString() : time.toISOString(), seq }
+}
+
+/** 列表快照落后于已收到的消息时，用序号更大的那条覆盖预览。 */
+export function applyLivePreview(item: ConversationItem, live?: LivePreview | null): ConversationItem {
+  const text = live?.text.trim()
+  if (!live || !text || live.seq <= item.previewSeq) return item
+  return { ...item, preview: text, lastActiveAt: live.sentAt, timeLabel: chatTimeLabel(live.sentAt), previewSeq: live.seq }
 }
 
 const weekdayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']

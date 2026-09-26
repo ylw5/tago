@@ -1,46 +1,39 @@
 <script setup lang="ts">
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
+import { computed } from 'vue'
 import { ApplicationCard, AppHeader, AppTabBar } from '@/components/business'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { useApplicationsData } from '@/composables/useApplicationsData'
 import { goBack } from '@/utils/navigation'
 
-const { applications, loading, error, load, accept, decline } = useApplicationsData()
+const { outgoing, loading, outgoingError, load } = useApplicationsData()
+const pending = computed(() => outgoing.value.filter(item => item.state === 'PENDING').length)
 
 function openDetail(id: string) { uni.navigateTo({ url: `/pages/tag/compare?id=${encodeURIComponent(id)}` }) }
-async function handleAccept(id: string) {
-  const acceptance = await accept(id)
-  uni.showToast({ title: '已接受，正在创建会话', icon: 'none' })
-  setTimeout(() => uni.navigateTo({ url: `/pages/chat/index?id=${encodeURIComponent(acceptance?.conversationId ?? id)}` }), 350)
-}
-async function handleDecline(id: string) {
-  await decline(id)
-  uni.showToast({ title: '申请已归档', icon: 'none' })
-}
+function openChat(id: string) { uni.navigateTo({ url: `/pages/chat/index?id=${encodeURIComponent(id)}` }) }
 
-onLoad((query) => { if (query?.tab === 'outgoing') uni.redirectTo({ url: '/pages/applications/outgoing' }) })
 onShow(load)
 </script>
 
 <template>
   <view class="tago-page applications-page">
-    <AppHeader variant="home" back title="有人想认识你" subtitle="看看哪些连接，正准备向你走来" slogan="每一次新的相遇\n都是生活送来的礼物" @back="goBack" />
-    <AsyncState :loading="loading" :error="error" :empty="!applications.length" empty-title="暂时没有新申请" empty-description="有人认真回应你的 Tag 后，会出现在这里。" @retry="load">
-      <template #empty-icon><image class="applications-empty-icon" src="/static/illustrations/recognition-envelope.png" mode="aspectFit" aria-hidden="true" /></template>
+    <AppHeader variant="home" back title="我发出的申请" subtitle="看看哪些回答，还在等对方回应" slogan="每一次真诚回应\n都可能带来新的相遇" @back="goBack" />
+    <AsyncState :loading="loading" :error="outgoingError" :empty="!outgoing.length" empty-title="还没有发出认识申请" empty-description="在发现页遇到感兴趣的 Tag，认真回答三问后会出现在这里。" @retry="load">
+      <template #empty-icon><image class="applications-empty-icon" src="/static/illustrations/meet-seedling.png" mode="aspectFit" aria-hidden="true" /></template>
       <view class="applications-summary">
         <view class="applications-summary__tape applications-summary__tape--tl" aria-hidden="true" />
         <view class="applications-summary__tape applications-summary__tape--br" aria-hidden="true" />
         <view class="applications-summary__envelope" aria-hidden="true">
-          <image src="/static/illustrations/recognition-envelope.png" mode="aspectFit" />
-          <text class="applications-summary__badge">{{ applications.length }}</text>
+          <image src="/static/illustrations/meet-seedling.png" mode="aspectFit" />
         </view>
         <view class="applications-summary__copy">
-          <view class="applications-summary__title"><text>你有</text><text class="applications-summary__count">{{ applications.length }}</text><text>个新的认识申请</text></view>
-          <text class="applications-summary__hint">不同的兴趣与故事，正在期待你的回应～</text>
+          <view v-if="pending" class="applications-summary__title"><text>你有</text><text class="applications-summary__count">{{ pending }}</text><text>个还在等待</text></view>
+          <view v-else class="applications-summary__title"><text>这些申请都有结果了</text></view>
+          <text class="applications-summary__hint">{{ pending ? '对方看到你的回答后，会决定要不要认识你～' : '点开可以回看当时写下的回答' }}</text>
         </view>
-        <view class="applications-summary__note"><text>慢慢看，</text><text>总会遇到对的人 ♡</text></view>
+        <view class="applications-summary__note"><text>慢慢等，</text><text>真诚的回答会被看见 ♡</text></view>
       </view>
-      <view class="applications-list"><ApplicationCard v-for="application in applications" :key="application.id" :application="application" @detail="openDetail" @accept="handleAccept" @decline="handleDecline" /></view>
+      <view class="applications-list"><ApplicationCard v-for="application in outgoing" :key="application.id" :application="application" @detail="openDetail" @chat="openChat" /></view>
     </AsyncState>
     <AppTabBar active="meet" />
   </view>
@@ -52,8 +45,8 @@ onShow(load)
 .applications-list { display:flex; flex-direction:column; }
 .applications-list :deep(.application:last-child) { margin-bottom:0; }
 
-.applications-summary { position:relative; display:flex; align-items:center; gap:16rpx; margin:6rpx 4rpx 30rpx; padding:18rpx 22rpx 18rpx 18rpx; border-radius:6rpx; background:linear-gradient(100deg,#fcf0c6,#f9ecc4 60%,#f7e8bd); box-shadow:0 6rpx 16rpx rgba(120,98,40,.12); }
-.applications-summary__tape { position:absolute; width:48rpx; height:18rpx; background:rgba(236,205,120,.6); pointer-events:none; }
+.applications-summary { position:relative; display:flex; align-items:center; gap:16rpx; margin:6rpx 4rpx 30rpx; padding:18rpx 22rpx 18rpx 18rpx; border-radius:6rpx; background:linear-gradient(100deg,#e7f3df,#dceccf 60%,#d4e6c6); box-shadow:0 6rpx 16rpx rgba(70,110,60,.1); }
+.applications-summary__tape { position:absolute; width:48rpx; height:18rpx; background:rgba(176,206,150,.7); pointer-events:none; }
 .applications-summary__tape--tl { top:-6rpx; left:-14rpx; transform:rotate(-36deg); }
 .applications-summary__tape--br { right:-14rpx; bottom:-4rpx; transform:rotate(-36deg); }
 .applications-summary__envelope { position:relative; width:84rpx; height:70rpx; flex:none; }

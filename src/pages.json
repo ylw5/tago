@@ -18,6 +18,7 @@
     { "path": "pages/discover/index", "style": { "navigationStyle": "custom" } },
     { "path": "pages/meet/index", "style": { "navigationStyle": "custom" } },
     { "path": "pages/applications/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/applications/outgoing", "style": { "navigationStyle": "custom" } },
     { "path": "pages/tag/compose", "style": { "navigationStyle": "custom" } },
     { "path": "pages/tag/history", "style": { "navigationStyle": "custom" } },
     { "path": "pages/tag/detail", "style": { "navigationStyle": "custom" } },

@@ -9,6 +9,7 @@ const FALLBACK_BY_ROUTE: Record<string, string> = {
   'pages/tag/history': '/pages/account/index',
   'pages/chat/index': '/pages/meet/index',
   'pages/applications/index': '/pages/meet/index',
+  'pages/applications/outgoing': '/pages/meet/index',
   'pages/account/index': '/pages/discover/index',
   'pages/account/profile': '/pages/account/index',
   'pages/account/avatar': '/pages/account/profile',

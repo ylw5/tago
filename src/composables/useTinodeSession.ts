@@ -1,6 +1,7 @@
 import { computed, shallowRef } from 'vue'
-import type { Tinode, TinodeTopic } from 'tinode-sdk'
+import type { Tinode, TinodeMessage, TinodeTopic } from 'tinode-sdk'
 import * as TinodeModule from 'tinode-sdk'
+import { livePreviewFromMessage, type LivePreview } from '@/api/adapters'
 import { createChatConnection } from '@/api/chat'
 
 type TinodeFactory = typeof TinodeModule.Tinode
@@ -31,14 +32,41 @@ async function waitForChatHandshake(instance:Tinode) {
 
 const client = shallowRef<Tinode|null>(null)
 const unread = shallowRef<ReadonlyMap<string, number>>(new Map())
+const previews = shallowRef<ReadonlyMap<string, LivePreview>>(new Map())
 const error = shallowRef('')
 let pending: Promise<Tinode>|null = null
 let instance: Tinode|null = null
 let generation = 0
 let retry: ReturnType<typeof setTimeout>|undefined
 let retryDelay = 1000
+const openTopics = new Set<string>()
+const previewPulls = new Map<string, Promise<void>>()
 
-export const tinodeSession = { client: computed(() => client.value), unread: computed(() => unread.value), error: computed(() => error.value) }
+export const tinodeSession = {
+  client: computed(() => client.value),
+  unread: computed(() => unread.value),
+  previews: computed(() => previews.value),
+  error: computed(() => error.value),
+}
+
+export function claimConversationTopic(peer?: string | null) {
+  if (peer) openTopics.add(peer)
+}
+
+export function releaseConversationTopic(peer?: string | null) {
+  if (peer) openTopics.delete(peer)
+}
+
+export function noteTinodePreview(peer: string | null | undefined, message?: TinodeMessage) {
+  if (!peer?.startsWith('usr')) return
+  const preview = livePreviewFromMessage(message)
+  if (!preview) return
+  const current = previews.value.get(peer)
+  if (current && current.seq >= preview.seq) return
+  const next = new Map(previews.value)
+  next.set(peer, preview)
+  previews.value = next
+}
 
 export async function withChatTimeout<T>(task: Promise<T>, message = '聊天活动订阅超时'): Promise<T> {
   let timer: ReturnType<typeof setTimeout>|undefined
@@ -62,6 +90,86 @@ export function syncTinodeUnread(contact?: TinodeTopic, removed = false) {
   unread.value = next
 }
 
+function topicPeer(contact?: TinodeTopic) {
+  const peer = contact?.name || contact?.topic
+  return peer?.startsWith('usr') ? peer : ''
+}
+
+function waitForLatest(contact: TinodeTopic, target: number) {
+  const cached = contact.latestMessage()
+  if ((cached?.seq || 0) >= target && target > 0) return Promise.resolve()
+  if (contact.onData) return Promise.resolve()
+  return new Promise<void>(resolve => {
+    let settled = false
+    const previousDone = contact.onAllMessagesReceived
+    const finish = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      if (contact.onData === onData) contact.onData = undefined
+      if (contact.onAllMessagesReceived === onDone) contact.onAllMessagesReceived = previousDone
+      resolve()
+    }
+    const onData = (message?: TinodeMessage) => {
+      if ((message?.seq || contact.latestMessage()?.seq || 0) >= target) finish()
+    }
+    const onDone = (count: number) => {
+      previousDone?.(count)
+      finish()
+    }
+    const timer = setTimeout(finish, 3000)
+    contact.onData = onData
+    contact.onAllMessagesReceived = onDone
+  })
+}
+
+async function pullPreview(contact: TinodeTopic, peer: string, epoch: number) {
+  if (epoch !== generation || openTopics.has(peer) || contact._attached) return
+  const target = contact.seq || 0
+  try {
+    await withChatTimeout(contact.subscribe(contact.startMetaQuery().withData(undefined, undefined, 1).build()), '最新消息订阅超时')
+    if (epoch !== generation || openTopics.has(peer)) return
+    await new Promise(resolve => setTimeout(resolve, 0))
+    if ((contact.latestMessage()?.seq || 0) < target) await waitForLatest(contact, target)
+    if (epoch === generation) noteTinodePreview(peer, contact.latestMessage())
+  } catch { /* 下次新消息或回到列表时再拉。 */ }
+  finally {
+    if (epoch === generation && !openTopics.has(peer) && !contact.onData && contact._attached) await contact.leave(false).catch(() => {})
+  }
+}
+
+function enqueuePull(contact: TinodeTopic, peer: string, epoch: number) {
+  const existing = previewPulls.get(peer)
+  if (existing) return existing
+  const task = Promise.resolve().then(() => pullPreview(contact, peer, epoch)).finally(() => {
+    if (previewPulls.get(peer) === task) previewPulls.delete(peer)
+  })
+  previewPulls.set(peer, task)
+  return task
+}
+
+function refreshContactPreview(contact: TinodeTopic | undefined, epoch: number, attempt = 0) {
+  const peer = topicPeer(contact)
+  if (!contact || !peer || epoch !== generation || attempt > 1) return
+  const target = contact.seq || 0
+  const cached = contact.latestMessage()
+  if (cached?.seq && target > 0 && cached.seq >= target) {
+    noteTinodePreview(peer, cached)
+    return
+  }
+  // 聊天页开着时由会话里的消息写入预览；只有列表自己的补拉还挂着时才继续等。
+  if (openTopics.has(peer) || (contact._attached && !previewPulls.has(peer))) return
+  void enqueuePull(contact, peer, epoch).then(() => {
+    if (epoch !== generation) return
+    const latest = contact.latestMessage()
+    if ((latest?.seq || 0) >= (contact.seq || 0)) {
+      if (latest) noteTinodePreview(peer, latest)
+      return
+    }
+    if (!openTopics.has(peer) && !contact._attached) refreshContactPreview(contact, epoch, attempt + 1)
+  })
+}
+
 export function resetTinodeSession() {
   generation++
   clearTimeout(retry)
@@ -69,6 +177,9 @@ export function resetTinodeSession() {
   pending = null
   client.value = null
   unread.value = new Map()
+  previews.value = new Map()
+  previewPulls.clear()
+  openTopics.clear()
   error.value = ''
   retryDelay = 1000
   if (instance) { instance.onDisconnect = undefined; instance.disconnect(); instance = null }
@@ -114,7 +225,11 @@ export function ensureTinodeSession(): Promise<Tinode> {
       const me = active.getMeTopic()
       unread.value = new Map()
       me.onMetaSub = contact => { if (epoch === generation && instance === current) syncTinodeUnread(contact) }
-      me.onContactUpdate = (what, contact) => { if (epoch === generation && instance === current) syncTinodeUnread(contact, what === 'gone') }
+      me.onContactUpdate = (what, contact) => {
+        if (epoch !== generation || instance !== current) return
+        syncTinodeUnread(contact, what === 'gone')
+        if (what === 'msg') refreshContactPreview(contact, epoch)
+      }
       await withChatTimeout(me.subscribe({what:'sub'}), '未读状态订阅超时')
       if (epoch !== generation || instance !== active) throw new Error('聊天登录已取消')
       client.value = active

@@ -1,5 +1,5 @@
 import { computed, shallowRef, watch } from 'vue'
-import { conversationDtoToItem } from '@/api/adapters'
+import { applyLivePreview, conversationDtoToItem } from '@/api/adapters'
 import { getChatDetail, listChats, resolveChatPeers } from '@/api/chat'
 import { FIXTURES_ENABLED } from '@/api/client'
 import { conversationRowMeta } from '@/mocks/fixtures'
@@ -76,7 +76,11 @@ export function useMeetData() {
   }
 
   return {
-    conversations: computed(() => conversations.value.map(item => ({...item, unread: FIXTURES_ENABLED ? item.unread : tinodeSession.unread.value.get(item.peerTinodeUserId || '') ?? 0}))),
+    conversations: computed(() => conversations.value.map(item => {
+      const unread = FIXTURES_ENABLED ? item.unread : tinodeSession.unread.value.get(item.peerTinodeUserId || '') ?? 0
+      const live = FIXTURES_ENABLED ? undefined : tinodeSession.previews.value.get(item.peerTinodeUserId || '')
+      return applyLivePreview({ ...item, unread }, live)
+    })),
     unreadError: tinodeSession.error,
     loading: computed(() => loading.value),
     error: computed(() => error.value),

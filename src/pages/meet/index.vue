@@ -9,7 +9,15 @@ import { useMeetData } from '@/composables/useMeetData'
 
 const STALE_DAYS = 7
 
-const { applications, load: loadApplications } = useApplicationsData()
+const { applications, outgoing, outgoingError, load: loadApplications } = useApplicationsData()
+const outgoingPending = computed(() => outgoing.value.filter(item => item.state === 'PENDING').length)
+const incomingHint = computed(() => applications.value.length ? '新的认识申请' : '看看他们的回答')
+const outgoingHint = computed(() => {
+  if (outgoingError.value) return '暂时没加载出来'
+  if (outgoingPending.value) return `${outgoingPending.value} 个等待中`
+  if (outgoing.value.length) return '看看现在的状态'
+  return '还没有发出'
+})
 const { conversations, unreadError, loading: chatsLoading, error: chatsError, load: loadChats } = useMeetData()
 const staleExpanded = shallowRef(false)
 const staleBefore = computed(() => dayjs().subtract(STALE_DAYS, 'day'))
@@ -19,7 +27,8 @@ const staleConversations = computed(() => conversations.value.filter(item => day
 const staleFoldable = computed(() => recentConversations.value.length > 0 && staleConversations.value.length > 0)
 const showStale = computed(() => staleExpanded.value || !staleFoldable.value)
 
-function openApplications() { uni.navigateTo({ url: '/pages/applications/index' }) }
+function openIncoming() { uni.navigateTo({ url: '/pages/applications/index' }) }
+function openOutgoing() { uni.navigateTo({ url: '/pages/applications/outgoing' }) }
 function openChat(id: string) { uni.navigateTo({ url: `/pages/chat/index?id=${encodeURIComponent(id)}` }) }
 
 onShow(() => { void loadApplications(); void loadChats() })
@@ -28,17 +37,27 @@ onShow(() => { void loadApplications(); void loadChats() })
 <template>
   <view class="tago-page meet-page">
     <AppHeader variant="home" title="哪些温暖的相遇\n正在继续呢？" subtitle="和有趣的人，聊出更多可能" slogan="每一次对话\n都是生活多一种可能" />
-    <button class="application-entry" @click="openApplications">
-      <view class="application-entry__tape application-entry__tape--tl" aria-hidden="true" />
-      <view class="application-entry__tape application-entry__tape--tr" aria-hidden="true" />
-      <view class="application-entry__tape application-entry__tape--br" aria-hidden="true" />
-      <image class="application-entry__art" src="/static/illustrations/recognition-envelope.png" mode="aspectFit" aria-hidden="true" />
-      <view class="application-entry__copy">
-        <view class="application-entry__title"><text>有人想认识你</text><text v-if="applications.length" class="application-entry__badge">{{ applications.length }}</text></view>
-        <text class="application-entry__hint">{{ applications.length ? `点击去查看 ${applications.length} 个新的认识申请` : '看看他们认真写下的回答' }}</text>
-      </view>
-      <text class="application-entry__arrow">›</text>
-    </button>
+    <view class="application-pair">
+      <button class="slip slip--in" @click="openIncoming">
+        <view class="slip__tape" aria-hidden="true" />
+        <image class="slip__art" src="/static/illustrations/recognition-envelope.png" mode="aspectFit" aria-hidden="true" />
+        <view class="slip__copy">
+          <view class="slip__title-row">
+            <text class="slip__title">想认识你</text>
+            <text v-if="applications.length" class="slip__badge">{{ applications.length }}</text>
+          </view>
+          <text class="slip__hint">{{ incomingHint }}</text>
+        </view>
+      </button>
+      <button class="slip slip--out" @click="openOutgoing">
+        <view class="slip__tape" aria-hidden="true" />
+        <image class="slip__art" src="/static/illustrations/meet-seedling.png" mode="aspectFit" aria-hidden="true" />
+        <view class="slip__copy">
+          <text class="slip__title">我发出的</text>
+          <text class="slip__hint">{{ outgoingHint }}</text>
+        </view>
+      </button>
+    </view>
     <view class="conversation-heading">
       <image src="/static/illustrations/meet-seedling.png" mode="aspectFit" aria-hidden="true" />
       <text class="tago-section-title">聊天列表</text>
@@ -71,19 +90,20 @@ onShow(() => { void loadApplications(); void loadChats() })
 <style scoped lang="scss">
 .meet-page { display:flex; min-height:100dvh; flex-direction:column; overflow-x:hidden; }
 .empty-chat-icon { width:112rpx; height:112rpx; flex:none; margin-bottom:24rpx; color:var(--tago-primary); }
-.application-entry { position:relative; display:flex; align-items:center; width:100%; min-height:106rpx; margin:10rpx 0 18rpx; padding:14rpx 22rpx 14rpx 24rpx; overflow:visible; color:var(--tago-ink); text-align:left; border:0; border-radius:6rpx; background:linear-gradient(100deg,#fcf0c6,#f9ecc4 60%,#f7e8bd); box-shadow:0 6rpx 16rpx rgba(120,98,40,.12); line-height:1.3; }
-.application-entry::after { border:0; }
-.application-entry__tape { position:absolute; width:40rpx; height:16rpx; background:rgba(236,205,120,.55); pointer-events:none; }
-.application-entry__tape--tl { top:-6rpx; left:-12rpx; transform:rotate(-38deg); }
-.application-entry__tape--tr { top:-4rpx; right:-12rpx; transform:rotate(38deg); }
-.application-entry__tape--br { right:-12rpx; bottom:-4rpx; transform:rotate(-38deg); }
-.application-entry__art { width:84rpx; height:70rpx; flex:none; margin-right:16rpx; }
-.application-entry__copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:6rpx; }
-.application-entry__title { display:flex; align-items:center; gap:10rpx; }
-.application-entry__title > text:first-child { font-size:28rpx; font-weight:850; letter-spacing:1rpx; }
-.application-entry__hint { overflow:hidden; color:#2f6170; font-size:19rpx; text-overflow:ellipsis; white-space:nowrap; }
-.application-entry__badge { display:grid; box-sizing:border-box; min-width:32rpx; height:32rpx; padding:0 6rpx; place-items:center; flex:none; color:#fff; border-radius:999rpx; background:var(--tago-danger); font-size:18rpx; font-weight:850; line-height:1; }
-.application-entry__arrow { flex:none; color:#4d5660; font-size:40rpx; line-height:1; }
+.application-pair { display:flex; align-items:stretch; gap:16rpx; margin:8rpx 2rpx 16rpx; }
+.slip { position:relative; display:flex; min-width:0; flex:1; align-items:center; gap:10rpx; min-height:108rpx; margin:0; padding:14rpx 16rpx 14rpx 14rpx; overflow:visible; color:var(--tago-ink); text-align:left; border:0; border-radius:6rpx 12rpx 8rpx 10rpx; line-height:1.25; }
+.slip::after { border:0; }
+.slip--in { background:linear-gradient(135deg,#fff6d8,#f8e7b4); box-shadow:0 6rpx 14rpx rgba(120,98,40,.12); transform:rotate(-.4deg); }
+.slip--out { background:linear-gradient(135deg,#eef6e4,#dceccf); box-shadow:0 6rpx 14rpx rgba(70,110,60,.1); transform:rotate(.5deg); }
+.slip__tape { position:absolute; top:-6rpx; left:18rpx; width:42rpx; height:14rpx; background:rgba(236,205,120,.62); pointer-events:none; transform:rotate(-18deg); }
+.slip--out .slip__tape { background:rgba(176,206,150,.72); }
+.slip__art { width:64rpx; height:52rpx; flex:none; }
+.slip__copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:4rpx; }
+.slip__title-row { display:flex; min-width:0; align-items:center; gap:8rpx; }
+.slip__title { overflow:hidden; font-size:26rpx; font-weight:850; letter-spacing:1rpx; text-overflow:ellipsis; white-space:nowrap; }
+.slip__badge { display:grid; box-sizing:border-box; min-width:32rpx; height:32rpx; padding:0 6rpx; place-items:center; flex:none; color:#fff; border-radius:999rpx; background:var(--tago-danger); font-size:20rpx; font-weight:850; line-height:1; }
+.slip__hint { overflow:hidden; color:#4d6458; font-size:18rpx; text-overflow:ellipsis; white-space:nowrap; }
+.slip--in .slip__hint { color:#6a5428; }
 .conversation-heading { display:flex; align-items:center; min-width:0; margin:4rpx 0 12rpx; }
 .conversation-heading > image { width:64rpx; height:48rpx; flex:none; margin-left:-6rpx; }
 .conversation-heading .tago-section-title { flex:none; margin:0 0 0 10rpx; }
