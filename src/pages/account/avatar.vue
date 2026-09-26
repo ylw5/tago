@@ -48,17 +48,19 @@ onLoad((query) => {
     <PaperTitleHeader title="选择头像" subtitle="挑一个喜欢的头像，让大家认识你" @back="goBack" />
 
     <AsyncState class="avatar-stage" :loading="loading" :error="error" :empty="!avatars.length" empty-title="暂时没有可选头像" empty-description="可以先返回，稍后再来挑选头像。" @retry="load">
-      <view class="avatar-grid">
-        <view
-          v-for="(avatar, index) in avatars"
-          :key="avatar.id"
-          class="avatar-grid__item"
-          :class="{ 'avatar-grid__item--active': selected === avatar.id }"
-          :style="{ background: tints[index % tints.length] }"
-          @click="selected = avatar.id"
-        >
-          <AvatarImage :id="avatar.id" :url="avatar.url" />
-          <view v-if="selected === avatar.id" class="avatar-grid__check" />
+      <view class="avatar-frame">
+        <view class="avatar-grid">
+          <view
+            v-for="(avatar, index) in avatars"
+            :key="avatar.id"
+            class="avatar-grid__item"
+            :class="{ 'avatar-grid__item--active': selected === avatar.id }"
+            :style="{ background: tints[index % tints.length] }"
+            @click="selected = avatar.id"
+          >
+            <AvatarImage :id="avatar.id" :url="avatar.url" />
+            <view v-if="selected === avatar.id" class="avatar-grid__check" />
+          </view>
         </view>
       </view>
     </AsyncState>
@@ -72,7 +74,7 @@ onLoad((query) => {
 <style scoped lang="scss">
 $ink: #20584f;
 
-.avatar-page { position:relative; display:flex; min-height:100vh; flex-direction:column; overflow:hidden; padding:0 18px calc(24px + env(safe-area-inset-bottom)); background:#f5f2ea; }
+.avatar-page { position:relative; display:flex; height:100vh; height:100dvh; flex-direction:column; overflow:hidden; padding:0 18px env(safe-area-inset-bottom); background:#f5f2ea; }
 
 .scenery { position:absolute; inset:0; pointer-events:none; }
 .scenery image { position:absolute; display:block; }
@@ -82,15 +84,21 @@ $ink: #20584f;
 .scenery__cat { right:-18px; bottom:0; width:62%; }
 .scenery__note { position:absolute; bottom:70px; left:40px; color:#5f7f7a; font-size:12px; line-height:1.35; white-space:pre-line; transform:rotate(-6deg); }
 
-.avatar-stage :deep(.async-state__content) { display:flex; align-items:center; justify-content:center; }
-.avatar-grid { --avatar-size:min(132px,34vw); position:relative; z-index:2; display:grid; grid-template-columns:repeat(2,var(--avatar-size)); gap:22px 20px; }
+.avatar-stage { min-height:0; overflow:hidden; grid-template-rows:minmax(0,1fr); }
+.avatar-stage :deep(.async-state__content) { display:flex; min-height:0; flex-direction:column; overflow-x:hidden; overflow-y:auto; }
+.avatar-frame { display:flex; width:100%; min-height:100%; flex-direction:column; align-items:center; }
+.avatar-frame::before,.avatar-frame::after { content:''; flex:1 0 12px; }
+.avatar-grid { --avatar-size:min(132px,34vw); position:relative; z-index:2; display:grid; flex:none; grid-template-columns:repeat(2,var(--avatar-size)); gap:22px 20px; }
+@supports (height:100dvh) {
+  .avatar-grid { --avatar-size:min(132px,34vw,max(96px,calc((100dvh - 380px) / 2))); }
+}
 .avatar-grid__item { position:relative; width:var(--avatar-size); aspect-ratio:1; padding:5px; border:4px solid #fff; border-radius:50%; box-shadow:0 3px 10px rgba(60,70,50,.1); transition:transform .15s ease; }
 .avatar-grid__item .avatar-image { display:block; width:100%; height:100%; border-radius:50%; }
 .avatar-grid__item--active { border-color:#fff; box-shadow:0 0 0 3px $ink, 0 6px 14px rgba(32,88,79,.2); transform:scale(1.03); }
 .avatar-grid__check { position:absolute; right:2px; bottom:6px; width:28px; height:28px; border:3px solid #fff; border-radius:50%; background:$ink; }
 .avatar-grid__check::after { content:''; position:absolute; top:4px; left:8px; width:6px; height:11px; border-right:2.5px solid #fff; border-bottom:2.5px solid #fff; transform:rotate(45deg); }
 
-.avatar-actions { position:relative; z-index:2; display:flex; justify-content:center; margin-top:auto; padding:32px 0 120px; }
+.avatar-actions { position:relative; z-index:3; display:flex; flex:none; justify-content:center; padding:16px 0 clamp(28px,14dvh,120px); }
 .avatar-actions__confirm { width:76%; height:56px; border:0; border-radius:999px; background:linear-gradient(180deg,#1f6a60,#17504a); box-shadow:0 6px 14px rgba(23,80,74,.28); color:#fff; font-size:19px; font-weight:800; letter-spacing:4px; line-height:56px; }
 .avatar-actions__confirm::after { border:0; }
 .avatar-actions__confirm[disabled] { opacity:.55; }
