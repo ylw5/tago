@@ -8,6 +8,7 @@ import { getMyTag, getPublicTag } from '@/api/social'
 import AppHeader from '@/components/business/AppHeader.vue'
 import AsyncState from '@/components/ui/AsyncState.vue'
 import { goBack } from '@/utils/navigation'
+import { alignBidAmount, isAlignedBid } from '@/utils/bidAmount'
 
 type Current=components['schemas']['ExposureCurrent']; type Rules=components['schemas']['ExposureRules']; type Bid=components['schemas']['ExposureBid']; type Carousel=components['schemas']['ExposureCarouselItem']
 const current=shallowRef<Current|null>(null), rules=shallowRef<Rules|null>(null), bids=shallowRef<Bid[]>([]), carousel=shallowRef<Carousel[]>([])
@@ -21,7 +22,7 @@ async function load(){loading.value=true;error.value='';try{const [c,r,b,ca,m]=a
   const ids=(ca.items||[]).map(item=>item.tagId).filter((id):id is string=>Boolean(id))
   if(ids.length){const titles:Record<string,string>={};await Promise.all(ids.map(async id=>{try{const tag=await getPublicTag(id);titles[id]=tag.body.startsWith('#')?tag.body:`# ${tag.body}`}catch{titles[id]=`Tag ${id.slice(0,8)}`}}));carouselTitles.value=titles}
 }catch(cause){error.value=cause instanceof Error?cause.message:'曝光信息加载失败'}finally{loading.value=false}}
-async function submit(){if(!tagId.value)return uni.showToast({title:'请先发布一个 Tag',icon:'none'});submitting.value=true;try{lookupKey.value=`exposure-${Date.now()}-${Math.random().toString(16).slice(2)}`;const result=await createExposureBid({tagId:tagId.value,tagVersion:tagVersion.value,offeredCoin:amount.value},lookupKey.value);await getExposureBid(result.bidId);lookupResult.value=await getExposureBidByIdempotencyKey(lookupKey.value);await load();uni.showToast({title:result.status==='ACCEPTED'?'竞价成功':'竞价未通过',icon:'none'})}finally{submitting.value=false}}
+async function submit(){if(!tagId.value)return uni.showToast({title:'请先发布一个 Tag',icon:'none'});const step=Math.max(Number(rules.value?.minimumIncrement||1),1);const floor=Number(minimum.value);const offered=Number(amount.value);if(!isAlignedBid(offered,floor,step)){amount.value=String(alignBidAmount(offered,floor,step));return uni.showToast({title:`需以 ${step} 星币为单位，已调整为 ${amount.value}`,icon:'none'})}submitting.value=true;try{lookupKey.value=`exposure-${Date.now()}-${Math.random().toString(16).slice(2)}`;const result=await createExposureBid({tagId:tagId.value,tagVersion:tagVersion.value,offeredCoin:amount.value},lookupKey.value);await getExposureBid(result.bidId);lookupResult.value=await getExposureBidByIdempotencyKey(lookupKey.value);await load();uni.showToast({title:result.status==='ACCEPTED'?'竞价成功':'竞价未通过',icon:'none'})}finally{submitting.value=false}}
 async function lookupBid(){if(!lookupKey.value.trim())return;submitting.value=true;try{lookupResult.value=await getExposureBidByIdempotencyKey(lookupKey.value.trim())}finally{submitting.value=false}}
 function openWallet(){uni.navigateTo({url:'/pages/wallet/index'})} onShow(load)
 </script>

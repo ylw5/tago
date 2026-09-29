@@ -5,6 +5,7 @@ import { ApiError } from '@/api/client'
 import { createExposureBid, getCurrentExposure, getExposureRules } from '@/api/exposure'
 import { getMyTag } from '@/api/social'
 import { getWalletBalance } from '@/api/wallet'
+import { alignBidAmount, stepBidAmount } from '@/utils/bidAmount'
 
 type Current = components['schemas']['ExposureCurrent']
 type Rules = components['schemas']['ExposureRules']
@@ -23,6 +24,7 @@ const loading = shallowRef(false)
 const submitting = shallowRef(false)
 const acceptedCoin = shallowRef(0)
 let pendingKey = ''
+let confirmAdjustedUntil = 0
 
 const topCoin = computed(() => Number(current.value?.paidCoin || 0))
 const minimum = computed(() => Number(current.value?.minimumBid || rules.value?.openingBid || 0))
@@ -63,13 +65,21 @@ watch(() => props.visible, (open) => {
   load()
 }, { immediate: true })
 
-function decrease() { amount.value = Math.max(minimum.value, amount.value - step.value) }
-function increase() { amount.value += step.value }
+function decrease() { amount.value = stepBidAmount(amount.value, minimum.value, step.value, -1) }
+function increase() { amount.value = stepBidAmount(amount.value, minimum.value, step.value, 1) }
 function onInput(event: Event) {
   const value = Number.parseInt((event as unknown as { detail: { value: string } }).detail.value, 10)
   amount.value = Number.isFinite(value) ? value : 0
 }
-function onBlur() { if (amount.value < minimum.value) amount.value = minimum.value }
+function snapAmount() {
+  const next = alignBidAmount(amount.value, minimum.value, step.value)
+  if (next === amount.value) return false
+  amount.value = next
+  confirmAdjustedUntil = Date.now() + 600
+  toast(`需以 ${step.value} 星币为单位，已调整为 ${next}`)
+  return true
+}
+function onBlur() { snapAmount() }
 
 function toast(title: string) { uni.showToast({ title, icon: 'none' }) }
 
@@ -86,6 +96,10 @@ async function submit() {
   if (submitting.value || loading.value) return
   if (!tag.value) return openComposer()
   if (alreadyTop.value) return toast('你的 Tag 已是当前榜首')
+  if (snapAmount() || Date.now() < confirmAdjustedUntil) {
+    confirmAdjustedUntil = 0
+    return
+  }
   if (amount.value < minimum.value) {
     amount.value = minimum.value
     return toast(`最低出价 ${minimum.value} 星币`)

@@ -1492,6 +1492,8 @@ export interface components {
       state: "DRAFT" | "PUBLISHED" | "CLOSED" | "REPLACED" | "EXPIRED";
       /** Format: int64 */
       version: number;
+      /** @description 当前访问者与该 Tag 的申请状态和申请资格。未登录或不适用时为空。 */
+      viewerIntroduction?: components["schemas"]["ViewerIntroductionView"] | null;
     };
     /** @description 邮箱验证码校验请求参数 */
     VerificationInput: {
@@ -1525,6 +1527,12 @@ export interface components {
       updatedAt: string;
       /** Format: int64 */
       version: number;
+    };
+    /** @description 当前访问者与该 Tag 的申请状态和申请资格 */
+    ViewerIntroductionView: {
+      canApply: boolean;
+      /** @enum {string} */
+      state: "NONE" | "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
     };
     WalletBalance: {
       available: string;

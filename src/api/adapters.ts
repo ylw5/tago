@@ -58,6 +58,11 @@ export function publisherSummary(item: TagDto) {
   return [...item.publisherAnswers].sort((a, b) => a.slot - b.slot).find(answer => answer.text.trim())?.text.trim() || ''
 }
 
+/** 申请被接受后就会建立对话。字段缺失时保持原推荐，避免详情暂时拉不到就把卡片丢掉。 */
+export function hasEstablishedConversation(item: Pick<TagDto, 'viewerIntroduction'>) {
+  return item.viewerIntroduction?.state === 'ACCEPTED'
+}
+
 export function recommendationToTag(item: Recommendation, index: number, generatedAt?: string | null): TagItem {
   const tone = stableTone(item.tagId)
   return {
