@@ -30,7 +30,8 @@ export default defineConfig(({ mode }) => {
       ] : []),
       uni(),
     ],
-    // 本机代理会断开 Node TLS；开发模式经 Chrome 网络栈转发真实 API。
+    // 开发时 /api 由 Vite 转到 VITE_API_PROXY_TARGET。
+    // VITE_API_BROWSER_PROXY=true 时才改走调试浏览器，留给本机 Node TLS 被代理打断的情况。
     // 生产构建直接访问 VITE_API_BASE_URL，不使用这段逻辑。
     resolve: {
       alias: {

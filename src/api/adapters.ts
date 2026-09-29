@@ -54,8 +54,13 @@ function recommendationSummary(reason?: string | null) {
   return !text || /^按.*排序$/.test(text) ? '' : text
 }
 
-export function publisherSummary(item: TagDto) {
+export function publisherSummary(item: Pick<TagDto, 'publisherAnswers'>) {
   return [...item.publisherAnswers].sort((a, b) => a.slot - b.slot).find(answer => answer.text.trim())?.text.trim() || ''
+}
+
+/** 卡片简介优先用 LLM 推荐理由；模型没传可用理由时，才用发布者第一题的回答。 */
+export function recommendationCardSummary(reason: string, detail?: Pick<TagDto, 'publisherAnswers'> | null) {
+  return reason.trim() || (detail ? publisherSummary(detail) : '') || DEFAULT_TAG_SUMMARY
 }
 
 /** 申请被接受后就会建立对话。字段缺失时保持原推荐，避免详情暂时拉不到就把卡片丢掉。 */

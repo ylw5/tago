@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
-import { applyLivePreview, chatTimeLabel, livePreviewFromMessage, messagePreviewText } from './adapters'
+import { applyLivePreview, chatTimeLabel, DEFAULT_TAG_SUMMARY, livePreviewFromMessage, messagePreviewText, recommendationCardSummary } from './adapters'
 import type { ConversationItem } from '@/types/models'
 
 // 2026-09-24 是周四
@@ -49,6 +49,14 @@ it('reads list preview text from plain and drafty messages', () => {
   expect(messagePreviewText(null)).toBe('')
   expect(livePreviewFromMessage({ seq: 0, content: '空序号' })).toBeNull()
   expect(livePreviewFromMessage({ seq: 3, ts: '2026-09-24T20:00:00Z', content: { txt: '最新' } })).toMatchObject({ text: '最新', seq: 3 })
+})
+
+it('keeps the model reason and falls back to the first publisher answer', () => {
+  const detail = { publisherAnswers: [{ slot: 2, text: '第二题' }, { slot: 1, text: '  第一题的回答  ' }] }
+  expect(recommendationCardSummary('你们都喜欢夜里散步', detail)).toBe('你们都喜欢夜里散步')
+  expect(recommendationCardSummary('  ', detail)).toBe('第一题的回答')
+  expect(recommendationCardSummary('', { publisherAnswers: [{ slot: 1, text: '   ' }] })).toBe(DEFAULT_TAG_SUMMARY)
+  expect(recommendationCardSummary('', null)).toBe(DEFAULT_TAG_SUMMARY)
 })
 
 it('keeps the backend avatar choice instead of assigning a photo from the display name', async () => {

@@ -1,7 +1,7 @@
 import { computed, shallowRef } from 'vue'
 import { getCurrentExposure, getExposureCarousel, getExposureRules } from '@/api/exposure'
 import { getProfile } from '@/api/account'
-import { DEFAULT_TAG_SUMMARY, hasEstablishedConversation, publisherSummary, recommendationToTag, tagDtoToTag } from '@/api/adapters'
+import { hasEstablishedConversation, recommendationCardSummary, recommendationToTag, tagDtoToTag } from '@/api/adapters'
 import { getDiscovery, getMyTag, getPublicTag, listApplications, refreshDiscovery } from '@/api/social'
 import { ensureBackendSession } from './useBackendSession'
 import type { TagItem } from '@/types/models'
@@ -36,14 +36,14 @@ export function useDiscoverData() {
       return cache.get(id)!
     }
   }
-  /** 推荐接口不返回发布者简介。拉 Tag 详情时顺便用 viewerIntroduction 丢掉已经建立对话的 Tag。 */
+  /** 拉 Tag 详情是为了丢掉已经建立对话的 Tag。简介保留 LLM 理由，没传时才用第一题回答。 */
   async function fillSummaries<T extends TagItem>(items: T[], detail: ReturnType<typeof detailLoader>) {
     const results = await Promise.allSettled(items.map(item => detail(item.id)))
     return items.flatMap((item, index) => {
       const result = results[index]!
       if (result.status === 'fulfilled' && hasEstablishedConversation(result.value)) return []
-      const summary = result.status === 'fulfilled' ? publisherSummary(result.value) : ''
-      return [{ ...item, summary: summary || item.summary || DEFAULT_TAG_SUMMARY }]
+      const tag = result.status === 'fulfilled' ? result.value : null
+      return [{ ...item, summary: recommendationCardSummary(item.summary, tag) }]
     })
   }
   function applySummaries(detail: ReturnType<typeof detailLoader>) {
